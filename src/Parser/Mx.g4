@@ -37,8 +37,8 @@ statement:
 
 expression:
 	//term
-	atom									# atomExpr
-	| LParen expression RParen				# parenExpr
+	LParen expression RParen				# parenExpr
+	| atom									# atomExpr
 	| expression Dot Identifier				# memberExpr
 	| expression arrayBlock+				# arrayExpr
 	| expression LParen exprList? RParen	# funcExpr
@@ -49,19 +49,25 @@ expression:
 	| <assoc = right> op = (Inc | Dec) expression	# unaryExpr
 	| <assoc = right> op = (Not | Tilde) expression	# unaryExpr
 	| <assoc = right> op = (Add | Sub) expression	# unaryExpr
-	// binary
-	| left = expression op = (Add | Sub) right = expression						# binaryExpr
+	// binary, has priority
 	| left = expression op = (Mul | Div | Mod) right = expression				# binaryExpr
+	| left = expression op = (Add | Sub) right = expression						# binaryExpr
 	| left = expression op = (LShift | RShift) right = expression				# binaryExpr
 	| left = expression op = (Ge | Geq | Le | Leq | Eq | Ne) right = expression	# binaryExpr
-	| left = expression op = (And | Or | Xor) right = expression				# binaryExpr
-	| left = expression op = (AndAnd | OrOr) right = expression					# binaryExpr
+	| left = expression op = And right = expression								# binaryExpr
+	| left = expression op = Or right = expression								# binaryExpr
+	| left = expression op = Xor right = expression								# binaryExpr
+	| left = expression op = AndAnd right = expression							# binaryExpr
+	| left = expression op = OrOr right = expression							# binaryExpr
 	// ternary
 	| cond = expression Ques left = expression Colon right = expression # ternaryExpr
-	// assign
-	| <assoc = right> lvalue = expression Assign rvalue = expression # assignExpr
 	// formatted string
-	| 'f' Quot ('$' expression '$' | .)? Quot # formatStrExpr;
+	| ((
+		FStringHead (expression FStringBody)*? expression FStringTail
+	)
+	| FStringAtom) # formatStrExpr
+	// assign
+	| <assoc = right> lvalue = expression Assign rvalue = expression # assignExpr;
 
 exprList:	expression (Comma expression)*;
 arrayBlock:	LBrack expression? RBrack;
@@ -108,6 +114,8 @@ Comma:	',';
 Ques:	'?';
 Colon:	':';
 Quot:	'"';
+Dol:'$';
+FQuot:'f"';
 
 Assign:	'=';
 Add:	'+';
@@ -143,7 +151,14 @@ Identifier: [a-zA-Z][a-zA-Z_0-9]*;
 
 DecimalInt: [1-9][0-9]* | '0';
 
-StringConst: '"' ('\\' . | .)*? '"';
+FStringHead:			FQuot (FStringChar | DolDol)* Dol;
+FStringBody:			Dol (FStringChar | DolDol)* Dol;
+FStringTail:			Dol (FStringChar | DolDol)* Quot;
+FStringAtom:			FQuot (FStringChar | DolDol)* Quot;
+StringConst:			'"' (EscapeChar | .)*? '"';
+fragment FStringChar:	EscapeChar | ~('$' | '"');
+fragment DolDol:		'$$';
+fragment EscapeChar:	'\\\\' | '\\n' | '\\t' | '\\"';
 
 Whitespace: [ \t+] -> skip;
 

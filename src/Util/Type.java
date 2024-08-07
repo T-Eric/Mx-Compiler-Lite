@@ -2,6 +2,8 @@
 // and judge whether the types are the same
 package Util;
 
+import Util.Error.internalError;
+
 public class Type {
   public boolean isVariable;
   public ASTType type = null;
@@ -35,6 +37,27 @@ public class Type {
     }
 
     return false;
+  }
+
+  public String toString() {
+    String dim=new String();
+    for(int i=0;i<dimension;++i)dim+="[]";
+    switch (type) {
+    case Bool:
+      return "bool"+dim;
+    case Int:
+      return "int" + dim;
+    case String:
+      return "string" + dim;
+    case Void:
+      return "void" + dim;
+    case Null:
+      return "null" + dim;
+    case ClassName:
+      return "class " + className + dim;
+    default:
+      throw new internalError("unknown error in ASTType.toString()", null);
+    }
   }
 
   public enum ASTType {

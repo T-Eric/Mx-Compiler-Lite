@@ -1,15 +1,14 @@
-package AST.StmtNodes;
+package AST.ExprNodes;
 
 import AST.ASTVisitor;
-import AST.ExprNodes.ExprNode;
 import Util.position;
 
-public class singleExprStmtNode extends StmtNode {
+public class selfExprNode extends ExprNode {
   public ExprNode expr = null;
 
-  public singleExprStmtNode(position pos) {
+  public selfExprNode(position pos) {
     super(pos);
-    type = StmtType.SingleExpr;
+    exprType = ExprType.Self;
   }
   @Override
   public void accept(ASTVisitor visitor) {

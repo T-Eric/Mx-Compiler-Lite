@@ -1,13 +1,12 @@
 package utility.scope;
 
-import utility.Type;
-import utility.position;
-import utility.error.semanticError;
-
-import java.util.HashMap;
-
 import ast.classDefNode;
 import ast.funcDefNode;
+import java.util.HashMap;
+import utility.Type;
+import utility.Type.ASTType;
+import utility.error.semanticError;
+import utility.position;
 
 public class globalScope extends scope {
   // private HashMap<String, Type> variables=new HashMap<>();// only variables
@@ -19,6 +18,7 @@ public class globalScope extends scope {
 
   public globalScope(scope parScope) {
     super(parScope);
+    mainScope = this;
     // parScope must be null
   }
 
@@ -31,7 +31,9 @@ public class globalScope extends scope {
 
   public boolean containsType(String name) { return types.containsKey(name); }
 
-  public boolean containsType(Type t) { return types.containsValue(t); }
+  public boolean containsType(Type t) {
+    return t.type == ASTType.ClassName && types.containsKey(t.className);
+  }
 
   public Type getTypeFromName(String name, position pos) {
     if (types.containsKey(name))
@@ -71,8 +73,8 @@ public class globalScope extends scope {
                                   node.name + "] in mainScope!",
                               node.pos);
     if (classes.containsKey(node.name))
-      throw new semanticError("Has already defined class with same name: [" + node.name +
-                                  "] in mainScope!",
+      throw new semanticError("Has already defined class with same name: [" +
+                                  node.name + "] in mainScope!",
                               node.pos);
     functions.put(node.name, new funcScope(mainScope, node));
   }

@@ -2,16 +2,16 @@ package ast;
 
 import java.util.ArrayList;
 
+import utility.Type;
 import utility.position;
 
 public class argListNode extends ASTNode {
-  public ArrayList<typeNode> types;
-  public ArrayList<String> identifiers;
+  public ArrayList<typeNode> types=new ArrayList<>();
+  public ArrayList<String> identifiers=new ArrayList<>();
+  public ArrayList<Type> returnTypes=new ArrayList<>();
 
   public argListNode(position pos) {
     super(pos);
-    types = new ArrayList<>();
-    identifiers = new ArrayList<>();
   }
 
   @Override

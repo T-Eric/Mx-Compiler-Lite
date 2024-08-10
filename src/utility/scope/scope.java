@@ -7,9 +7,9 @@ import utility.position;
 import utility.error.semanticError;
 
 public class scope {
-  private HashMap<String, Type> variables=new HashMap<>();// only variables
+  public HashMap<String, Type> variables=new HashMap<>();// only variables
   private scope parentScope=null;
-  public globalScope mainScope=null;// a way to reach directly to the root
+  public globalScope mainScope=null;
 
   public scope(scope parentScope) {
     this.parentScope = parentScope;

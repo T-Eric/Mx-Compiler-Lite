@@ -5,6 +5,7 @@ import ast.ExprNodes.*;
 import ast.ExprNodes.ExprNode.ExprType;
 import ast.ExprNodes.ExprNode.OpType;
 import ast.StmtNodes.*;
+import ast.StmtNodes.StmtNode.StmtType;
 import java.util.ArrayList;
 import java.util.Stack;
 import utility.Type;
@@ -20,7 +21,7 @@ public class SemanticChecker implements ASTVisitor {
   Stack<scope> scopeStack = new Stack<>();
   String curClass = null;
 
-  enum scopeType { Class, Func, Loop, Main }
+  enum scopeType { Class, Func, Loop, Main, Custom }
 
   public SemanticChecker(globalScope gScope) { ms = gScope; }
 
@@ -66,7 +67,8 @@ public class SemanticChecker implements ASTVisitor {
     else
       curScope = ms.getFuncScope(it.name, it.pos);
     scopeStack.push(curScope);
-    it.argList.accept(this);
+    // if (it.argList != null)
+    //   it.argList.accept(this);
     it.suite.accept(this);
     scopeStack.pop();
     scopeTypeStack.pop();
@@ -122,6 +124,8 @@ public class SemanticChecker implements ASTVisitor {
   public void visit(varDefNode it) {
     it.type.usageHasDimension = true;
     it.type.accept(this);
+    if (it.type.type.type == ASTType.Void)
+      throw new semanticError("Variable cannot be void", it.pos);
     for (var term : it.varTerms) {
       term.callerType = it.type.type;
       term.accept(this);
@@ -134,10 +138,10 @@ public class SemanticChecker implements ASTVisitor {
     if (it.assignExpr != null) {
       it.assignExpr.accept(this);
       Type callerType = it.callerType, calleeType = it.assignExpr.valueType;
-      if (!(callerType.type == ASTType.ClassName ||
-            callerType.dimension != 0) &&
-              (calleeType.type == ASTType.Null) ||
-          callerType.equals(calleeType))
+      if (!(((callerType.type == ASTType.ClassName ||
+              callerType.dimension != 0) &&
+             (calleeType.type == ASTType.Null)) ||
+            callerType.equals(calleeType)))
         throw new semanticError("Type mismatch in variable assignment!",
                                 it.pos);
     }
@@ -183,7 +187,7 @@ public class SemanticChecker implements ASTVisitor {
       if (stmt.returnType != null) {
         if (it.returnType == null || it.returnType.type == ASTType.Null)
           it.returnType = stmt.returnType;
-        else if (stmt.returnType != it.returnType)
+        else if (!stmt.returnType.equals(it.returnType))
           throw new semanticError("Duplicated return declaration!", stmt.pos);
       }
     }
@@ -286,24 +290,34 @@ public class SemanticChecker implements ASTVisitor {
 
   @Override
   public void visit(suiteStmtNode it) {
-    it.suite.accept(this);
+    if (it.indie) {
+      scopeStack.push(new scope(scopeStack.peek(), ms));
+      it.suite.accept(this);
+      scopeStack.pop();
+    } else
+      it.suite.accept(this);
     it.returnType = it.suite.returnType;
   }
 
   @Override
   public void visit(ifStmtNode it) {
-    it.ifCondExpr.accept(null);
+    it.ifCondExpr.accept(this);
     if (it.ifCondExpr.valueType.type != ASTType.Bool)
       throw new semanticError("If-condition expression is not bool expression!",
                               it.ifCondExpr.pos);
-    scopeStack.push(new scope(scopeStack.peek()));
+    if (it.trueStmt.type == StmtType.Suite)
+      ((suiteStmtNode)it.trueStmt).indie = false;
+    scopeStack.push(new scope(scopeStack.peek(), ms));
     it.trueStmt.accept(this);
     scopeStack.pop();
     if (it.falseStmt != null) {
-      scopeStack.push(new scope(scopeStack.peek()));
+      if (it.falseStmt.type == StmtType.Suite)
+        ((suiteStmtNode)it.falseStmt).indie = false;
+      scopeStack.push(new scope(scopeStack.peek(), ms));
       it.falseStmt.accept(this);
       scopeStack.pop();
-      if (!it.trueStmt.returnType.equals(it.falseStmt.returnType))
+      if (!(it.trueStmt.returnType == null && it.falseStmt.returnType == null ||
+            it.trueStmt.returnType.equals_feat_null(it.falseStmt.returnType)))
         throw new semanticError(
             "Return types in true and false branch are not equal!", it.pos);
     }
@@ -312,12 +326,14 @@ public class SemanticChecker implements ASTVisitor {
 
   @Override
   public void visit(whileStmtNode it) {
-    scopeStack.push(new scope(scopeStack.peek()));
+    scopeStack.push(new scope(scopeStack.peek(), ms));
     it.condExpr.accept(this);
     if (it.condExpr.valueType.type != ASTType.Bool)
       throw new semanticError(
           "While-condition expression is not bool expression!",
           it.condExpr.pos);
+    if (it.bodyStmt.type == StmtType.Suite)
+      ((suiteStmtNode)it.bodyStmt).indie = false;
     scopeTypeStack.push(scopeType.Loop);
     it.bodyStmt.accept(this);
     scopeStack.pop();
@@ -327,7 +343,7 @@ public class SemanticChecker implements ASTVisitor {
 
   @Override
   public void visit(forStmtNode it) {
-    scopeStack.push(new scope(scopeStack.peek()));
+    scopeStack.push(new scope(scopeStack.peek(), ms));
     if (it.initExpr != null) {
       if (it.initWithVarDef)
         it.initVarDef.accept(this);
@@ -340,6 +356,10 @@ public class SemanticChecker implements ASTVisitor {
         throw new semanticError(
             "For-statement's condition is not bool expression!", it.pos);
     }
+    if (it.stepExpr != null)
+      it.stepExpr.accept(this);
+    if (it.forBodyStmt.type == StmtType.Suite)
+      ((suiteStmtNode)it.forBodyStmt).indie = false;
     scopeTypeStack.push(scopeType.Loop);
     it.forBodyStmt.accept(this);
     it.returnType = it.forBodyStmt.returnType;
@@ -375,7 +395,7 @@ public class SemanticChecker implements ASTVisitor {
   @Override
   public void visit(singleExprStmtNode it) {
     it.expr.accept(this);
-    it.returnType = it.expr.valueType;
+    // it.returnType = it.expr.valueType;
   }
 
   @Override
@@ -409,14 +429,15 @@ public class SemanticChecker implements ASTVisitor {
   public void visit(memberExprNode it) {
     it.expr.accept(this);
     Type objectType = it.expr.valueType;
-    // only process member variables
-    if (objectType.dimension != 0)
-      throw new semanticError("Array type has no member variable!", it.pos);
-    else if (objectType.type == ASTType.String ||
-             objectType.type == ASTType.ClassName)
+    if (objectType.dimension != 0 || objectType.type == ASTType.String ||
+        objectType.type == ASTType.ClassName) {
+      if (objectType.dimension != 0)
+        objectType.className = "_array";
+      if (objectType.type == ASTType.String)
+        objectType.className = "_string";
       it.valueType =
           ms.getClassScope(objectType.className, it.pos).getType(it.id, false);
-    else
+    } else
       throw new semanticError("Syntax error in member call!", it.pos);
   } ////// need further analyze
 
@@ -442,11 +463,12 @@ public class SemanticChecker implements ASTVisitor {
     funcScope fScope = null;
     if (it.funcExpr.exprType == ExprType.Member) {
       it.funcExpr.accept(this);
-      if (it.funcExpr.valueType.dimension != 0)
-        it.funcExpr.valueType.className = "_array";
-      else if (it.funcExpr.valueType.type == ASTType.String)
-        it.funcExpr.valueType.className = "_string";
-      fScope = ms.getClassScope(it.funcExpr.valueType.className, it.pos)
+      var objectExpr = ((memberExprNode)it.funcExpr).expr;
+      if (objectExpr.valueType.dimension != 0)
+        objectExpr.valueType.className = "_array";
+      else if (objectExpr.valueType.type == ASTType.String)
+        objectExpr.valueType.className = "_string";
+      fScope = ms.getClassScope(objectExpr.valueType.className, it.pos)
                    .getMethodScope(((memberExprNode)it.funcExpr).id, it.pos);
     } else if (it.funcExpr.exprType == ExprType.Atom) {
       it.funcExpr.accept(this);
@@ -474,7 +496,7 @@ public class SemanticChecker implements ASTVisitor {
     if (originArgTypes.size() != curArgTypes.size())
       throw new semanticError("Wrong number of args!", it.pos);
     for (int i = 0; i < originArgTypes.size(); ++i) {
-      if (!originArgTypes.get(i).equals(curArgTypes.get(i)))
+      if (!originArgTypes.get(i).equals_feat_null(curArgTypes.get(i)))
         throw new semanticError("Receiving wrong argument type here!",
                                 it.args.expressions.get(i).pos);
     }
@@ -487,6 +509,9 @@ public class SemanticChecker implements ASTVisitor {
   public void visit(newExprNode it) {
     it.rightType.usageHasDimension = true; // only array can be newed
     it.rightType.accept(this);
+    if (it.rightType.type.type == ASTType.Void)
+      throw new semanticError("New expressions cannot apply to void", it.pos);
+    it.valueType = it.rightType.type;
   }
 
   @Override
@@ -499,6 +524,7 @@ public class SemanticChecker implements ASTVisitor {
     if (t.type != ASTType.Int || t.dimension != 0)
       throw new semanticError("Only int can use ++ and --!", it.pos);
     it.valueType = t;
+    it.valueType.isVariable = false;
   }
 
   @Override
@@ -512,6 +538,9 @@ public class SemanticChecker implements ASTVisitor {
       if (t.type != ASTType.Int || t.dimension != 0)
         throw new semanticError("This left op can only be used with int",
                                 it.pos);
+      // if rightType is rightvalue it can't be applied to prefix operands
+      if (!t.isVariable && (it.op == OpType.Inc || it.op == OpType.Dec))
+        throw new semanticError("'++/--[right value]' is illegal", it.pos);
     }
     it.valueType = t;
   }
@@ -533,12 +562,11 @@ public class SemanticChecker implements ASTVisitor {
 
     if (it.op == OpType.Eq || it.op == OpType.Ne) {
       // int, bool, class(address), array, string
-      if ((lType.dimension != 0 && rType.type == ASTType.Null) ||
-          lType.equals(rType))
+      if (lType.equals_feat_null(rType))
         v = new Type(ASTType.Bool, false);
       else
-        throw new semanticError("Not same type or not [array]'op'[null]",
-                                it.pos);
+        throw new semanticError(
+            "Not same type or not [array & class] op [null]", it.pos);
     } else if (it.op == OpType.AndAnd || it.op == OpType.OrOr) {
       // bool
       if (lType.type == ASTType.Bool && rType.type == ASTType.Bool)
@@ -548,10 +576,9 @@ public class SemanticChecker implements ASTVisitor {
     } else if (it.op == OpType.Ge || it.op == OpType.Geq ||
                it.op == OpType.Le || it.op == OpType.Leq) {
       // int, string
-      if (lType.type == ASTType.Int && rType.type == ASTType.Int)
-        v = new Type(ASTType.Int, false);
-      else if (lType.type == ASTType.String && rType.type == ASTType.String)
-        v = new Type(ASTType.String, false);
+      if ((lType.type == ASTType.Int && rType.type == ASTType.Int) ||
+          (lType.type == ASTType.String && rType.type == ASTType.String))
+        v = new Type(ASTType.Bool, false);
       else
         throw new semanticError("Not both int & string type", it.pos);
     } else if (it.op == OpType.Add) {
@@ -581,10 +608,13 @@ public class SemanticChecker implements ASTVisitor {
                               it.pos);
     it.lhsExpr.accept(this);
     it.rhsExpr.accept(this);
-    if (!it.lhsExpr.valueType.equals(it.rhsExpr.valueType))
+    if (!it.lhsExpr.valueType.equals_feat_null(it.rhsExpr.valueType))
       throw new semanticError(
           "Ternary expression's two branch return different types", it.pos);
     it.valueType = it.lhsExpr.valueType;
+    it.valueType.isVariable = false;
+    // ! here! actually the valuetype is not known!
+    // maybe we should keep 'dual valuetypes'
   }
 
   @Override
@@ -612,15 +642,16 @@ public class SemanticChecker implements ASTVisitor {
     it.rhsExpr.accept(this);
     Type leftType = it.lhsExpr.valueType, rightType = it.rhsExpr.valueType;
     // array=null, others must all same
-    boolean legal = false;
-    legal = (leftType.type == rightType.type);
-    legal = legal && (leftType.type == rightType.type &&
-                      leftType.type == ASTType.ClassName &&
-                      leftType.className == rightType.className);
-    legal = legal && (leftType.dimension == rightType.dimension);
-    legal = legal ||
-            (!((leftType.dimension != 0 && rightType.type == ASTType.Null)));
-    if (!legal)
+    // boolean legal = false;
+    // legal = (leftType.type == rightType.type);
+    // legal = legal || (leftType.type == rightType.type &&
+    //                   leftType.type == ASTType.ClassName &&
+    //                   leftType.className == rightType.className);
+    // legal = legal && (leftType.dimension == rightType.dimension);
+    // legal =
+    //     legal || ((leftType.dimension != 0 && rightType.type ==
+    //     ASTType.Null));
+    if (!leftType.equals_feat_null(rightType))
       throw new semanticError("Type mismatch in assignment!", it.pos);
 
     it.valueType = leftType;

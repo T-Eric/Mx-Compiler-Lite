@@ -6,6 +6,7 @@ import ast.suiteNode;
 
 public class suiteStmtNode extends StmtNode {
   public suiteNode suite=null;
+  public boolean indie=true;// if the suitestmt is individually introduced
 
   public suiteStmtNode(position pos) {
     super(pos);

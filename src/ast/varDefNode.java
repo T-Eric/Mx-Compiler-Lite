@@ -6,7 +6,7 @@ import utility.position;
 
 public class varDefNode extends ASTNode {
   public typeNode type = null;
-  public ArrayList<varTermNode> varTerms;
+  public ArrayList<varTermNode> varTerms=new ArrayList<>();
 
   public varDefNode(position pos) { super(pos); }
   @Override

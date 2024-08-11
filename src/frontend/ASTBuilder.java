@@ -24,6 +24,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     programNode node = new programNode(new position(ctx));
     ctx.programPart().forEach(
         part -> node.parts.add((programPartNode)visit(part)));
+    generateBuiltin(node);
     return node;
   }
 
@@ -36,7 +37,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     } else if (ctx.funcDef() != null) {
       node.partType = PartType.FuncDef;
       node.funcDef = (funcDefNode)visit(ctx.funcDef());
-    } else if (ctx.funcDef() != null) {
+    } else if (ctx.varDef() != null) {
       node.partType = PartType.VarDef;
       node.varDef = (varDefNode)visit(ctx.varDef());
     } else
@@ -101,8 +102,9 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
   @Override
   public ASTNode visitSuite(MxParser.SuiteContext ctx) {
     suiteNode node = new suiteNode(new position(ctx));
-    for (var st : ctx.statement())
+    for (var st : ctx.statement()) {
       node.stmts.add((StmtNode)visit(st));
+    }
     return node;
   }
 
@@ -128,6 +130,14 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     for (var ab : ctx.arrayBlock())
       node.blocks.add((arrayBlockNode)visit(ab));
     node.type = type;
+    return node;
+  }
+
+  @Override
+  public ASTNode visitExprList(MxParser.ExprListContext ctx) {
+    exprListNode node = new exprListNode(new position(ctx));
+    for (var e : ctx.expression())
+      node.expressions.add((ExprNode)visit(e));
     return node;
   }
 
@@ -241,6 +251,13 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
   }
 
   @Override
+  public ASTNode visitVarDefStmt(MxParser.VarDefStmtContext ctx) {
+    varDefStmtNode node = new varDefStmtNode(new position(ctx));
+    node.varDef = (varDefNode)visit(ctx.varDef());
+    return node;
+  }
+
+  @Override
   public ASTNode visitEmptyStmt(MxParser.EmptyStmtContext ctx) {
     return new emptyStmtNode(new position(ctx));
   }
@@ -300,6 +317,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
   @Override
   public ASTNode visitSelfExpr(MxParser.SelfExprContext ctx) {
     selfExprNode node = new selfExprNode(new position(ctx));
+    node.expr = (ExprNode)visit(ctx.expression());
     if (ctx.Inc() != null)
       node.op = OpType.Inc;
     else if (ctx.Dec() != null)

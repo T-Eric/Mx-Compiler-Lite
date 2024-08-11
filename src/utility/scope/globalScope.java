@@ -17,8 +17,7 @@ public class globalScope extends scope {
   private HashMap<String, funcScope> functions = new HashMap<>();
 
   public globalScope(scope parScope) {
-    super(parScope);
-    mainScope = this;
+    super(parScope, null);
     // parScope must be null
   }
 
@@ -32,7 +31,10 @@ public class globalScope extends scope {
   public boolean containsType(String name) { return types.containsKey(name); }
 
   public boolean containsType(Type t) {
-    return t.type == ASTType.ClassName && types.containsKey(t.className);
+    if (t.type == ASTType.ClassName)
+      return types.containsKey(t.className);
+    else
+      return true;
   }
 
   public Type getTypeFromName(String name, position pos) {
@@ -42,7 +44,8 @@ public class globalScope extends scope {
       throw new semanticError("Undefined type: [" + name + "]!", pos);
   }
 
-  public void defClass(classDefNode node) {
+  // first collect classes, then define their methods
+  public void preDefClass(classDefNode node) {
     if (classes.containsKey(node.name))
       throw new semanticError("Has already defined such class: [" + node.name +
                                   "] in mainScope!",
@@ -50,8 +53,23 @@ public class globalScope extends scope {
     if (functions.containsKey(node.name))
       throw new semanticError("Has already defined such function: [" +
                                   node.name + "] in mainScope!",
+                              node.pos); // actually won't twigger
+    classes.put(node.name, null);
+  }
+
+  public void defClass(classDefNode node) {
+    if (classes.containsKey(node.name)) {
+      if (classes.get(node.name) != null)
+        throw new semanticError("Has already defined such class: [" +
+                                    node.name + "] in mainScope!",
+                                node.pos);
+      classes.remove(node.name);                          
+    }
+    if (functions.containsKey(node.name))
+      throw new semanticError("Has already defined such function: [" +
+                                  node.name + "] in mainScope!",
                               node.pos);
-    classes.put(node.name, new classScope(mainScope, node));
+    classes.put(node.name, new classScope(this, node));
   }
 
   // classes cannot strate, no need to 'lookupon'
@@ -76,7 +94,7 @@ public class globalScope extends scope {
       throw new semanticError("Has already defined class with same name: [" +
                                   node.name + "] in mainScope!",
                               node.pos);
-    functions.put(node.name, new funcScope(mainScope, node));
+    functions.put(node.name, new funcScope(this, this, node));
   }
 
   // funcs also cannot strate
@@ -91,5 +109,12 @@ public class globalScope extends scope {
     else
       throw new semanticError(
           "Undefined function: [" + name + "] in mainScope!", pos);
+  }
+
+  @Override
+  public Type getType(String name, boolean lookupon) {
+    if (functions.containsKey(name))
+      return new Type(functions.get(name).retType.type, false);
+    return super.getType(name, false);
   }
 }

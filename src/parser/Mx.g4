@@ -52,7 +52,7 @@ expression:
 	// binary, has priority
 	| left = expression op = (Mul | Div | Mod) right = expression				# binaryExpr
 	| left = expression op = (Add | Sub) right = expression						# binaryExpr
-	| left = expression op = (Shl | Shr) right = expression				# binaryExpr
+	| left = expression op = (Shl | Shr) right = expression						# binaryExpr
 	| left = expression op = (Ge | Geq | Le | Leq | Eq | Ne) right = expression	# binaryExpr
 	| left = expression op = And right = expression								# binaryExpr
 	| left = expression op = Or right = expression								# binaryExpr
@@ -60,12 +60,14 @@ expression:
 	| left = expression op = AndAnd right = expression							# binaryExpr
 	| left = expression op = OrOr right = expression							# binaryExpr
 	// ternary
-	| cond = expression Ques left = expression Colon right = expression # ternaryExpr
+	| <assoc = right>cond = expression Ques left = expression Colon right = expression # ternaryExpr
 	// formatted string
-	| ((
-		FStringHead (expression FStringBody)*? expression FStringTail
-	)
-	| FStringAtom) # formatStrExpr
+	| (
+		(
+			FStringHead (expression FStringBody)*? expression FStringTail
+		)
+		| FStringAtom
+	) # formatStrExpr
 	// assign
 	| <assoc = right> lvalue = expression Assign rvalue = expression # assignExpr;
 
@@ -114,8 +116,8 @@ Comma:	',';
 Ques:	'?';
 Colon:	':';
 Quot:	'"';
-Dol:'$';
-FQuot:'f"';
+Dol:	'$';
+FQuot:	'f"';
 
 Assign:	'=';
 Add:	'+';

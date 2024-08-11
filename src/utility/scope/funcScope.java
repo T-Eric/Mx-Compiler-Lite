@@ -1,12 +1,11 @@
 package utility.scope;
 
-import utility.Type;
-import utility.error.semanticError;
-
-import java.util.ArrayList;
-
 import ast.funcDefNode;
 import ast.typeNode;
+import java.util.ArrayList;
+import utility.Type;
+import utility.Type.ASTType;
+import utility.error.semanticError;
 
 public class funcScope extends scope {
   // construct from funcDefNode is fast
@@ -17,14 +16,18 @@ public class funcScope extends scope {
   public String name = null;
   // ! why not directly add in variables?
   public ArrayList<String> argNames = new ArrayList<>();
-  public ArrayList<Type> argTypes=new ArrayList<>();
+  public ArrayList<Type> argTypes = new ArrayList<>();
   // can't just use hashmap because we need an order
 
-  public funcScope(scope parScope, funcDefNode node) {
-    super(parScope);
+  public funcScope(scope parScope, globalScope mainScope, funcDefNode node) {
+    super(parScope, mainScope);
 
     name = node.name;
-    retType = node.type.type;
+    if (node.type == null) {
+      // maybe constructor
+      retType = new Type(ASTType.Null, false);
+    } else
+      retType = node.type.type;
     if (retType != null && !mainScope.containsType(retType))
       throw new semanticError("Undefined return type: [" + retType.toString() +
                                   "] in function [" + name + "]!",

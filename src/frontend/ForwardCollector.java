@@ -16,30 +16,32 @@ import utility.scope.globalScope;
  */
 public class ForwardCollector implements ASTVisitor {
   public globalScope ms;
-  public ForwardCollector(globalScope gs){
-    this.ms=gs;
-  }
+  private boolean collectedAllClasses = false;
+  public ForwardCollector(globalScope gs) { this.ms = gs; }
 
   @Override
   public void visit(programNode it) {
-    it.parts.forEach(pt->pt.accept(this));
+    it.parts.forEach(pt -> pt.accept(this));
+    collectedAllClasses = true;
+    it.parts.forEach(pt -> pt.accept(this));
   }
 
   @Override
   public void visit(programPartNode it) {
     switch (it.partType) {
-      case ClassDef:
-        it.classDef.accept(this);
-        break;
-      case FuncDef:
+    case ClassDef:
+      it.classDef.accept(this);
+      break;
+    case FuncDef:
+      if (collectedAllClasses)
         it.funcDef.accept(this);
-        break;
-      case VarDef:
-        // do nothing
-        // global vars cannot be declared right now
-        break;
-      default:
-        throw new IllegalStateException("Your bad: partType not set!");
+      break;
+    case VarDef:
+      // do nothing
+      // global vars cannot be declared right now
+      break;
+    default:
+      throw new IllegalStateException("Your bad: partType not set!");
     }
   }
 
@@ -57,12 +59,16 @@ public class ForwardCollector implements ASTVisitor {
   @Override
   public void visit(varTermNode it) {}
 
-  // the 
+  // the
   @Override
   public void visit(classDefNode it) {
-    ms.defClass(it);
-    Type ctype = new Type(it.name);
-    ms.addType(it.name, ctype, it.pos);
+    if (collectedAllClasses)
+      ms.defClass(it);
+    else {
+      Type ctype = new Type(it.name);
+      ms.addType(it.name, ctype, it.pos);
+      ms.preDefClass(it);
+    }
   }
 
   @Override

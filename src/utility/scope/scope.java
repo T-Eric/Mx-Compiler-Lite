@@ -8,18 +8,18 @@ import utility.error.semanticError;
 
 public class scope {
   public HashMap<String, Type> variables=new HashMap<>();// only variables
-  private scope parentScope=null;
+  public scope parentScope=null;
   public globalScope mainScope=null;
 
-  public scope(scope parentScope) {
+  public scope(scope parentScope,globalScope mainScope) {
     this.parentScope = parentScope;
+    this.mainScope = mainScope;
   }
-
-  public scope parentScope() { return parentScope; }
 
   public void defVar(String name, Type t, position pos) {
     if (variables.containsKey(name))
       throw new semanticError("Has already defined such variable [" + name+"]!", pos);
+    t.isVariable=true;
     variables.put(name, t);
   }
 
@@ -32,7 +32,9 @@ public class scope {
       return false;
   }
 
-  // get the type of one variable (or maybe funcs and structs)
+  // get the type of one variable (or maybe funcs' returnType and classType)
+  // wantWhich的设计：对于当前scope同时有同名类和变量时
+  // 注意到getType只会找变量，故先
   public Type getType(String name, boolean lookupon) {
     if (variables.containsKey(name))
       return variables.get(name);

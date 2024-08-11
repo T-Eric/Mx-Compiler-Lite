@@ -1984,7 +1984,7 @@ public class MxParser extends Parser {
 						setState(235);
 						match(Colon);
 						setState(236);
-						((TernaryExprContext)_localctx).right = expression(4);
+						((TernaryExprContext)_localctx).right = expression(3);
 						}
 						break;
 					case 11:
@@ -2527,7 +2527,7 @@ public class MxParser extends Parser {
 		"\u00e5\u00e6\n\u0004\u0000\u0000\u00e6\u00e7\u00055\u0000\u0000\u00e7"+
 		"\u0103\u0003\u0014\n\u0005\u00e8\u00e9\n\u0003\u0000\u0000\u00e9\u00ea"+
 		"\u0005\u001b\u0000\u0000\u00ea\u00eb\u0003\u0014\n\u0000\u00eb\u00ec\u0005"+
-		"\u001c\u0000\u0000\u00ec\u00ed\u0003\u0014\n\u0004\u00ed\u0103\u0001\u0000"+
+		"\u001c\u0000\u0000\u00ec\u00ed\u0003\u0014\n\u0003\u00ed\u0103\u0001\u0000"+
 		"\u0000\u0000\u00ee\u00ef\n\u0001\u0000\u0000\u00ef\u00f0\u0005 \u0000"+
 		"\u0000\u00f0\u0103\u0003\u0014\n\u0001\u00f1\u00f2\n\u0014\u0000\u0000"+
 		"\u00f2\u00f3\u0005\u0018\u0000\u0000\u00f3\u0103\u00057\u0000\u0000\u00f4"+

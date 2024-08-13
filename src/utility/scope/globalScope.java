@@ -23,8 +23,7 @@ public class globalScope extends scope {
 
   public void addType(String name, Type t, position pos) {
     if (types.containsKey(name))
-      throw new semanticError("Has already defined such type: [" + name + "]!",
-                              pos);
+      throw new semanticError("Undefined Identifier", pos);
     types.put(name, t);
   }
 
@@ -47,12 +46,9 @@ public class globalScope extends scope {
   // first collect classes, then define their methods
   public void preDefClass(classDefNode node) {
     if (classes.containsKey(node.name))
-      throw new semanticError("Has already defined such class: [" + node.name +
-                                  "] in mainScope!",
-                              node.pos);
+      throw new semanticError("Multiple Definitions", node.pos);
     if (functions.containsKey(node.name))
-      throw new semanticError("Has already defined such function: [" +
-                                  node.name + "] in mainScope!",
+      throw new semanticError("Multiple Definitions",
                               node.pos); // actually won't twigger
     classes.put(node.name, null);
   }
@@ -60,15 +56,11 @@ public class globalScope extends scope {
   public void defClass(classDefNode node) {
     if (classes.containsKey(node.name)) {
       if (classes.get(node.name) != null)
-        throw new semanticError("Has already defined such class: [" +
-                                    node.name + "] in mainScope!",
-                                node.pos);
-      classes.remove(node.name);                          
+        throw new semanticError("Multiple Definitions", node.pos);
+      classes.remove(node.name);
     }
     if (functions.containsKey(node.name))
-      throw new semanticError("Has already defined such function: [" +
-                                  node.name + "] in mainScope!",
-                              node.pos);
+      throw new semanticError("Multiple Definitions", node.pos);
     classes.put(node.name, new classScope(this, node));
   }
 
@@ -81,19 +73,15 @@ public class globalScope extends scope {
     if (classes.containsKey(name))
       return classes.get(name);
     else
-      throw new semanticError("Undefined class [" + name + "] in mainScope!",
+      throw new semanticError("Undefined Identifier",
                               pos);
   }
 
   public void defFunc(funcDefNode node) {
     if (functions.containsKey(node.name))
-      throw new semanticError("Has already defined such function: [" +
-                                  node.name + "] in mainScope!",
-                              node.pos);
+      throw new semanticError("Multiple Definitions", node.pos);
     if (classes.containsKey(node.name))
-      throw new semanticError("Has already defined class with same name: [" +
-                                  node.name + "] in mainScope!",
-                              node.pos);
+      throw new semanticError("Multiple Definitions", node.pos);
     functions.put(node.name, new funcScope(this, this, node));
   }
 
@@ -107,8 +95,7 @@ public class globalScope extends scope {
     if (functions.containsKey(name))
       return functions.get(name);
     else
-      throw new semanticError(
-          "Undefined function: [" + name + "] in mainScope!", pos);
+      throw new semanticError("Undefined Identifier", pos);
   }
 
   @Override

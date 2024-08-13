@@ -29,9 +29,7 @@ public class funcScope extends scope {
     } else
       retType = node.type.type;
     if (retType != null && !mainScope.containsType(retType))
-      throw new semanticError("Undefined return type: [" + retType.toString() +
-                                  "] in function [" + name + "]!",
-                              node.pos);
+      throw new semanticError("Undefined Identifier", node.pos);
 
     var argList = node.argList;
     if (argList != null) {

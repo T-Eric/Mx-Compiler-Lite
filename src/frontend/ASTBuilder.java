@@ -367,7 +367,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
   public ASTNode visitMemberExpr(MxParser.MemberExprContext ctx) {
     memberExprNode node = new memberExprNode(new position(ctx));
     node.expr = (ExprNode)visit(ctx.expression());
-    node.id = ctx.Identifier().getText();
+    if (ctx.Identifier() != null)
+      node.id = ctx.Identifier().getText();
+    else
+      node.id = "_this";
     return node;
   }
 

@@ -39,7 +39,7 @@ expression:
 	//term
 	LParen expression RParen				# parenExpr
 	| atom									# atomExpr
-	| expression Dot Identifier				# memberExpr
+	| expression Dot (Identifier | This)	# memberExpr
 	| expression arrayBlock+				# arrayExpr
 	| expression LParen exprList? RParen	# funcExpr
 	//new

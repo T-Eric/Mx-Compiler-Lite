@@ -18,7 +18,7 @@ public class scope {
 
   public void defVar(String name, Type t, position pos) {
     if (variables.containsKey(name))
-      throw new semanticError("Has already defined such variable [" + name+"]!", pos);
+      throw new semanticError("Multiple Definitions", pos);
     t.isVariable=true;
     variables.put(name, t);
   }

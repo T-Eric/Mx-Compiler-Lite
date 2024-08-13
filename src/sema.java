@@ -27,6 +27,7 @@ public class sema {
       input = System.in;
     } else {
       String file = "testcases/sema/const-array-package/const-array2.mx";
+      // testcases/sema/basic-package/basic-57.mx has sth wrong
       input = new FileInputStream(file);
     }
 

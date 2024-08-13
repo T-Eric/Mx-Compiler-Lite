@@ -14,6 +14,7 @@ public interface ASTVisitor {
   void visit(typeNode it);
   void visit(exprListNode it);
   void visit(arrayBlockNode it);
+  void visit(arrayConstNode it);
   void visit(atomNode it);
 
   void visit(suiteStmtNode it);
@@ -38,6 +39,7 @@ public interface ASTVisitor {
   void visit(binaryExprNode it);
   void visit(ternaryExprNode it);
   void visit(formatStrExprNode it);
+  void visit(arrayConstExprNode it);
   void visit(assignExprNode it);
 }
 // ... 我们暂时不清楚这个visitor干什么用

@@ -2,17 +2,16 @@ package ast.ExprNodes;
 
 import ast.ASTVisitor;
 import ast.arrayConstNode;
-import ast.typeNode;
 import utility.position;
 
-public class newExprNode extends ExprNode {
-  public typeNode rightType = null;
+public class arrayConstExprNode extends ExprNode {
   public arrayConstNode arrayConst = null;
 
-  public newExprNode(position pos) {
+  public arrayConstExprNode(position pos) {
     super(pos);
-    exprType = ExprType.New;
+    exprType = ExprType.ArrayConst;
   }
+
   @Override
   public void accept(ASTVisitor visitor) {
     visitor.visit(this);

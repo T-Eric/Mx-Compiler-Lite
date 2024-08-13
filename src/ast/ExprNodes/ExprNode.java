@@ -7,7 +7,7 @@ import utility.position;
 public abstract class ExprNode extends ASTNode {
   public Type valueType;
   public ExprType exprType;
-  public OpType op=OpType.None;
+  public OpType op = OpType.None;
   // public entity val;
 
   public ExprNode(position pos) { super(pos); }
@@ -27,6 +27,7 @@ public abstract class ExprNode extends ASTNode {
     Ternary,
     Assign,
     FormatStr,
+    ArrayConst
   }
 
   public enum OpType {

@@ -26,7 +26,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/misc-package/misc-12.mx";
+      String file = "testcases/sema/const-array-package/const-array2.mx";
       input = new FileInputStream(file);
     }
 

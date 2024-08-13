@@ -49,8 +49,10 @@ public class Type {
 
     return (type == ASTType.Null && otype.type == ASTType.ClassName) ||
         (type == ASTType.ClassName && otype.type == ASTType.Null) ||
-        (type == ASTType.Null && otype.dimension != 0) ||
-        (dimension != 0 && otype.type == ASTType.Null);
+        (type == ASTType.Null && otype.dimension != 0 &&
+         otype.dimension >= dimension) ||
+        (dimension != 0 && otype.type == ASTType.Null &&
+         dimension >= otype.dimension);
   }
 
   // only requires same type, no need for dimension

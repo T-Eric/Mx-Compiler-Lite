@@ -84,6 +84,9 @@ public class ForwardCollector implements ASTVisitor {
   public void visit(arrayBlockNode it) {}
 
   @Override
+  public void visit(arrayConstNode it) {}
+
+  @Override
   public void visit(atomNode it) {}
 
   @Override
@@ -151,4 +154,7 @@ public class ForwardCollector implements ASTVisitor {
 
   @Override
   public void visit(assignExprNode it) {}
+
+  @Override
+  public void visit(arrayConstExprNode it) {}
 }

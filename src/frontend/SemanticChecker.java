@@ -245,6 +245,12 @@ public class SemanticChecker implements ASTVisitor {
   }
 
   @Override
+  public void visit(arrayConstNode it) {
+    // TODO Auto-generated method stub
+    // modify the type
+  }
+
+  @Override
   public void visit(atomNode it) {
     switch (it.atomType) {
     case This:
@@ -509,8 +515,14 @@ public class SemanticChecker implements ASTVisitor {
   public void visit(newExprNode it) {
     it.rightType.usageHasDimension = true; // only array can be newed
     it.rightType.accept(this);
+    if (it.arrayConst != null)
+      it.arrayConst.accept(this);
     if (it.rightType.type.type == ASTType.Void)
       throw new semanticError("New expressions cannot apply to void", it.pos);
+    if (it.arrayConst != null &&
+        !it.rightType.type.equals_feat_null(it.arrayConst.varType))
+      throw new semanticError(
+          "Different types in typeExpression and arrayConst", it.pos);
     it.valueType = it.rightType.type;
   }
 
@@ -634,6 +646,12 @@ public class SemanticChecker implements ASTVisitor {
   }
 
   @Override
+  public void visit(arrayConstExprNode it) {
+    it.arrayConst.accept(this);
+    it.valueType = it.arrayConst.varType;
+  }
+
+  @Override
   public void visit(assignExprNode it) {
     // Remember checking lvalue
     it.lhsExpr.accept(this);
@@ -641,16 +659,7 @@ public class SemanticChecker implements ASTVisitor {
       throw new semanticError("Is not assignable(lvalue)!", it.pos);
     it.rhsExpr.accept(this);
     Type leftType = it.lhsExpr.valueType, rightType = it.rhsExpr.valueType;
-    // array=null, others must all same
-    // boolean legal = false;
-    // legal = (leftType.type == rightType.type);
-    // legal = legal || (leftType.type == rightType.type &&
-    //                   leftType.type == ASTType.ClassName &&
-    //                   leftType.className == rightType.className);
-    // legal = legal && (leftType.dimension == rightType.dimension);
-    // legal =
-    //     legal || ((leftType.dimension != 0 && rightType.type ==
-    //     ASTType.Null));
+
     if (!leftType.equals_feat_null(rightType))
       throw new semanticError("Type mismatch in assignment!", it.pos);
 

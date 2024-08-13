@@ -43,7 +43,7 @@ expression:
 	| expression arrayBlock+				# arrayExpr
 	| expression LParen exprList? RParen	# funcExpr
 	//new
-	| <assoc = right> New type # newExpr
+	| <assoc = right> New type arrayConst? # newExpr
 	//unary
 	| expression op = (Inc | Dec)					# selfExpr
 	| <assoc = right> op = (Inc | Dec) expression	# unaryExpr
@@ -67,12 +67,18 @@ expression:
 			FStringHead (expression FStringBody)*? expression FStringTail
 		)
 		| FStringAtom
-	) # formatStrExpr
+	)				# formatStrExpr
+	| arrayConst	# arrayConstExpr
 	// assign
 	| <assoc = right> lvalue = expression Assign rvalue = expression # assignExpr;
 
 exprList:	expression (Comma expression)*;
 arrayBlock:	LBrack expression? RBrack;
+
+arrayConst:
+	LBrace atom (Comma atom)* RBrace
+	| LBrace arrayConst (Comma arrayConst)* RBrace
+	| LBrace RBrace;
 
 atom:
 	This
@@ -152,6 +158,8 @@ Not:	'!';
 Identifier: [a-zA-Z][a-zA-Z_0-9]*;
 
 DecimalInt: [1-9][0-9]* | '0';
+
+Boolean: True | False;
 
 FStringHead:			FQuot (FStringChar | DolDol)* Dol;
 FStringBody:			Dol (FStringChar | DolDol)* Dol;

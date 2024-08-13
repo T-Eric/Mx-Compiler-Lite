@@ -1,4 +1,4 @@
-// Generated from Mx.g4 by ANTLR 4.13.1
+// Generated from /home/teric/projects/helloworld/GreatHomework2/Mx-Compiler-Lite/src/parser/Mx.g4 by ANTLR 4.13.1
 package parser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -149,26 +149,12 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFormatStrExpr(MxParser.FormatStrExprContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code unaryExpr}
-	 * labeled alternative in {@link MxParser#expression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitUnaryExpr(MxParser.UnaryExprContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code funcExpr}
 	 * labeled alternative in {@link MxParser#expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitFuncExpr(MxParser.FuncExprContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code ternaryExpr}
-	 * labeled alternative in {@link MxParser#expression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTernaryExpr(MxParser.TernaryExprContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code arrayExpr}
 	 * labeled alternative in {@link MxParser#expression}.
@@ -198,6 +184,13 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitAtomExpr(MxParser.AtomExprContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code arrayConstExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayConstExpr(MxParser.ArrayConstExprContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code binaryExpr}
 	 * labeled alternative in {@link MxParser#expression}.
 	 * @param ctx the parse tree
@@ -205,19 +198,33 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitBinaryExpr(MxParser.BinaryExprContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code assignExpr}
-	 * labeled alternative in {@link MxParser#expression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAssignExpr(MxParser.AssignExprContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code parenExpr}
 	 * labeled alternative in {@link MxParser#expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitParenExpr(MxParser.ParenExprContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code unaryExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUnaryExpr(MxParser.UnaryExprContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code ternaryExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTernaryExpr(MxParser.TernaryExprContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code assignExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssignExpr(MxParser.AssignExprContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link MxParser#exprList}.
 	 * @param ctx the parse tree
@@ -230,6 +237,12 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitArrayBlock(MxParser.ArrayBlockContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MxParser#arrayConst}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayConst(MxParser.ArrayConstContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link MxParser#atom}.
 	 * @param ctx the parse tree

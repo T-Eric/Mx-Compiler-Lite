@@ -22,6 +22,7 @@ public class atomNode extends ASTNode {
     Bool,
     Null,
   }
+  
   @Override
   public void accept(ASTVisitor visitor) {
     visitor.visit(this);

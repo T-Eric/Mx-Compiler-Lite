@@ -4,6 +4,8 @@ import ast.*;
 import ast.ExprNodes.*;
 import ast.ExprNodes.ExprNode.OpType;
 import ast.StmtNodes.*;
+import ast.arrayConstNode.ArrayConstType;
+import ast.atomNode.AtomType;
 import ast.programPartNode.PartType;
 import parser.MxBaseVisitor;
 import parser.MxParser;
@@ -146,6 +148,87 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     arrayBlockNode node = new arrayBlockNode(new position(ctx));
     if (ctx.expression() != null)
       node.expr = (ExprNode)visit(ctx.expression());
+    return node;
+  }
+
+  @Override
+  public ASTNode visitArrayConst(MxParser.ArrayConstContext ctx) {
+    arrayConstNode node = new arrayConstNode(new position(ctx));
+    if (!ctx.atom().isEmpty()) {
+      for (var a : ctx.atom()) {
+        var at = (atomNode)visit(a);
+        if (at.atomType == AtomType.Identifier ||
+            at.atomType == AtomType.This || at.atomType == AtomType.Null)
+          throw new semanticError("Unsupported arrayConst element type",
+                                  at.pos);
+        if (node.varType == null) {
+          if (at.atomType == AtomType.Bool)
+            node.varType = new Type(ASTType.Bool, false);
+          else if (at.atomType == AtomType.DecimalInt)
+            node.varType = new Type(ASTType.Int, false);
+          else
+            node.varType = new Type(ASTType.String, false);
+        } else {
+          if (node.varType.type == ASTType.Bool &&
+                  at.atomType != AtomType.Bool ||
+              node.varType.type == ASTType.Int &&
+                  at.atomType != AtomType.DecimalInt ||
+              node.varType.type == ASTType.String &&
+                  at.atomType != AtomType.StringConst)
+            throw new semanticError("Multi-type in one-dimension arrayConst",
+                                    node.pos);
+        }
+        node.atoms.add(at);
+      }
+      node.varType.dimension = 1;
+    } else if (!ctx.arrayConst().isEmpty()) {
+      Type sonType = null;
+      for (var a : ctx.arrayConst()) {
+        arrayConstNode ac = (arrayConstNode)visit(a);
+        if (ac.varType.type == ASTType.Null)
+          node.eachType.add(ArrayConstType.Empty);
+        else
+          node.eachType.add(ArrayConstType.ArrayConst);
+
+        // 1. all same type or empty
+        // 2. all same dimension or empty
+        if (ac.varType.type == ASTType.Null) {
+          if (sonType == null) {
+            sonType = new Type(ASTType.Null, false);
+          }
+          if (ac.varType.dimension == 0)
+            sonType.dimension = Math.max(2, sonType.dimension);
+          else
+            sonType.dimension = Math.max(ac.varType.dimension + 1,
+                                         sonType.dimension); //{{{}},{}}
+        } else {
+          if (sonType == null) {
+            sonType = new Type(ac.varType.type, false);
+            sonType.dimension = ac.varType.dimension + 1;
+          }
+          // check dimension
+          // 1. if first-time non-{}, then turn to it
+          else if (sonType.type == ASTType.Null) {
+            sonType.type = ac.varType.type;
+            if (sonType.dimension <= ac.varType.dimension)
+              sonType.dimension = ac.varType.dimension + 1;
+          } else { // 2. if not same type or not same dimension, throw
+            if (sonType.type != ac.varType.type)
+              throw new semanticError("ArrayConst has different type elements",
+                                      ac.pos);
+            if (sonType.dimension != ac.varType.dimension + 1)
+              throw new semanticError(
+                  "ArrayConst element has multi-dimension beyonds zero",
+                  ac.pos);
+          }
+        }
+      }
+      node.varType = sonType;
+      // {{},{}}'s dimension is 2
+    } else {
+      node.varType = new Type(ASTType.Null, false);
+      node.varType.dimension = 0; // need more thoughts
+    }
     return node;
   }
 
@@ -311,6 +394,9 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
   public ASTNode visitNewExpr(MxParser.NewExprContext ctx) {
     newExprNode node = new newExprNode(new position(ctx));
     node.rightType = (typeNode)visit(ctx.type());
+    if (ctx.arrayConst() != null)
+      node.arrayConst = (arrayConstNode)visit(ctx.arrayConst());
+    // check in SemanticChecker
     return node;
   }
 
@@ -429,6 +515,13 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
       node.strings.add(ctx.FStringTail().getText().substring(
           1, ctx.FStringTail().getText().length() - 1));
     }
+    return node;
+  }
+
+  @Override
+  public ASTNode visitArrayConstExpr(MxParser.ArrayConstExprContext ctx) {
+    arrayConstExprNode node = new arrayConstExprNode(new position(ctx));
+    node.arrayConst = (arrayConstNode)visit(ctx.arrayConst());
     return node;
   }
 

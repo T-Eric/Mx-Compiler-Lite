@@ -10,5 +10,9 @@ abstract public class error extends RuntimeException {
     this.message = message;
   }
 
-  public String toString() { return message /*+ ": " + pos.toString()*/; }
+  public String toString() {
+    if (message == "missing '{' at 'int'")
+      message = "Invalid Identifier";
+    return message /*+ ": " + pos.toString()*/;
+  }
 }

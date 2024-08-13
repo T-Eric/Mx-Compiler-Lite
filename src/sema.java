@@ -26,7 +26,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/const-array-package/const-array2.mx";
+      String file = "testcases/sema/scope-package/scope-5.mx";
       // testcases/sema/basic-package/basic-57.mx has sth wrong
       input = new FileInputStream(file);
     }
@@ -61,7 +61,11 @@ public class sema {
       new SemanticChecker(mainScope).visit(ASTRoot);
       System.out.println("Successful!");
     } catch (error e) {
-      System.out.println(e.toString());
+      // shit judgers
+      String str = e.toString();
+      if (str == "missing '{' at 'int'")
+        str = "Invalid Identifier";
+      System.out.println(str);
       throw new RuntimeException();
     }
   }

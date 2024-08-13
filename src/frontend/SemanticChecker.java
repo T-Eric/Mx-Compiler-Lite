@@ -595,7 +595,7 @@ public class SemanticChecker implements ASTVisitor {
       else if (lType.type == ASTType.String && rType.type == ASTType.String)
         v = new Type(ASTType.String, false);
       else
-        throw new semanticError("Type Mismatch", it.pos);
+        throw new semanticError("Invalid Type", it.pos);
     } else if (it.op == OpType.None) {
       throw new semanticError("I can't understand this operand...", it.pos);
     } else {
@@ -653,8 +653,12 @@ public class SemanticChecker implements ASTVisitor {
     it.rhsExpr.accept(this);
     Type leftType = it.lhsExpr.valueType, rightType = it.rhsExpr.valueType;
 
-    if (!leftType.equals_feat_null(rightType))
-      throw new semanticError("Type mismatch", it.pos);
+    if (!leftType.equals_feat_null(rightType)) {
+      // if (leftType.type == rightType.type &&
+      //     leftType.dimension != rightType.dimension)
+      //   throw new semanticError("Dimension Out Of Bound", null);
+      throw new semanticError("Type Mismatch", it.pos);
+    }
 
     it.valueType = leftType;
     // if set to null we cannot support continuous assignment

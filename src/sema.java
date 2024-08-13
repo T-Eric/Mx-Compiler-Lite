@@ -19,7 +19,7 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = true;
+    boolean run_by_bash = false;
     boolean watchTree = false;
 
     InputStream input;
@@ -61,7 +61,7 @@ public class sema {
       new SemanticChecker(mainScope).visit(ASTRoot);
       System.out.println("Successful!");
     } catch (error e) {
-      System.err.println(e.toString());
+      System.out.println(e.toString());
       throw new RuntimeException();
     }
   }

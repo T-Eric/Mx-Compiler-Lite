@@ -10,7 +10,8 @@ public class MxErrorListener extends BaseErrorListener {
   public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
                           int line, int charPositionInLine, String msg,
                           RecognitionException e) {
-    if (msg.charAt(0) == 'm')
+    boolean in_oj = true;
+    if (in_oj)
       msg = new String("Invalid Identifier");
     throw new syntaxError(msg, new position(line, charPositionInLine));
   }

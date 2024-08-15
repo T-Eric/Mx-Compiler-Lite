@@ -4,6 +4,7 @@ import utility.position;
 abstract public class error extends RuntimeException {
   private position pos;
   private String message;
+  boolean in_oj = true;
 
   public error(String message, position pos) {
     this.pos = pos;
@@ -11,8 +12,8 @@ abstract public class error extends RuntimeException {
   }
 
   public String toString() {
-    if (message == "missing '{' at 'int'")
-      message = "Invalid Identifier";
-    return message /*+ ": " + pos.toString()*/;
+    if (in_oj)
+      return message;
+    return message + ": " + pos.toString();
   }
 }

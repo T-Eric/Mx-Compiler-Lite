@@ -2,8 +2,11 @@ import ast.programNode;
 import frontend.ASTBuilder;
 import frontend.ForwardCollector;
 import frontend.SemanticChecker;
+import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -21,13 +24,20 @@ public class sema {
     // run monitors
     boolean run_by_bash = true;
     boolean watchTree = false;
+    boolean outToFile = false;
+
+    if (outToFile) {
+      PrintStream ps = new PrintStream(
+          new BufferedOutputStream(new FileOutputStream("src/out.txt")), true);
+      System.setOut(ps);
+    }
 
     InputStream input;
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/scope-package/scope-5.mx";
-      // testcases/sema/basic-package/basic-57.mx has sth wrong
+      String file = "testcases/sema/basic-package/basic-8.mx";
+      // testcases/sema/basic-package/basic-8.mx has sth wrong with oj test
       input = new FileInputStream(file);
     }
 
@@ -61,11 +71,7 @@ public class sema {
       new SemanticChecker(mainScope).visit(ASTRoot);
       System.out.println("Successful!");
     } catch (error e) {
-      // shit judgers
-      String str = e.toString();
-      if (str == "missing '{' at 'int'")
-        str = "Invalid Identifier";
-      System.out.println(str);
+      System.out.println(e.toString());
       throw new RuntimeException();
     }
   }

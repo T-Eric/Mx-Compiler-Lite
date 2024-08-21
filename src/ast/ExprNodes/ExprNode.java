@@ -1,6 +1,7 @@
 package ast.ExprNodes;
 
 import ast.ASTNode;
+import midend.irassets.irId;
 import utility.Type;
 import utility.position;
 
@@ -8,7 +9,7 @@ public abstract class ExprNode extends ASTNode {
   public Type valueType;
   public ExprType exprType;
   public OpType op = OpType.None;
-  // public entity val;
+  public irId value = null;
 
   public ExprNode(position pos) { super(pos); }
 

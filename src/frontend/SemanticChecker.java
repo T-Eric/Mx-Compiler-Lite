@@ -21,7 +21,7 @@ public class SemanticChecker implements ASTVisitor {
   Stack<scope> scopeStack = new Stack<>();
   String curClass = null;
 
-  enum scopeType { Class, Func, Loop, Main, Custom }
+  public enum scopeType { Class, Func, Loop, Main, Custom }
 
   public SemanticChecker(globalScope gScope) { ms = gScope; }
 

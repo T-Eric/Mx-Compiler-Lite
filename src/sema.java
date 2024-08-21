@@ -22,7 +22,7 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = true;
+    boolean run_by_bash = false;
     boolean watchTree = false;
     boolean outToFile = false;
 
@@ -36,7 +36,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/basic-package/basic-8.mx";
+      String file = "testcases/sema/const-array-package/const-array6.mx";
       // testcases/sema/basic-package/basic-8.mx has sth wrong with oj test
       input = new FileInputStream(file);
     }

@@ -1,17 +1,16 @@
 package utility.scope;
 
 import java.util.HashMap;
-
 import utility.Type;
-import utility.position;
 import utility.error.semanticError;
+import utility.position;
 
 public class scope {
-  public HashMap<String, Type> variables=new HashMap<>();// only variables
-  public scope parentScope=null;
-  public globalScope mainScope=null;
+  public HashMap<String, Type> variables = new HashMap<>(); // only variables
+  public scope parentScope = null;
+  public globalScope mainScope = null;
 
-  public scope(scope parentScope,globalScope mainScope) {
+  public scope(scope parentScope, globalScope mainScope) {
     this.parentScope = parentScope;
     this.mainScope = mainScope;
   }
@@ -19,7 +18,7 @@ public class scope {
   public void defVar(String name, Type t, position pos) {
     if (variables.containsKey(name))
       throw new semanticError("Multiple Definitions", pos);
-    t.isVariable=true;
+    t.isVariable = true;
     variables.put(name, t);
   }
 

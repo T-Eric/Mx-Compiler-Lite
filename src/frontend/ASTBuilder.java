@@ -590,7 +590,20 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     root.parts.add(
         generatePart(generateFunc(stringType, "toString", intType, "i")));
 
-    // ! string builtin operands: maybe we don't need to
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_add", stringType, "lhs", stringType, "rhs")));
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_eq", stringType, "lhs", stringType, "rhs")));
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_ne", stringType, "lhs", stringType, "rhs")));
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_lt", stringType, "lhs", stringType, "rhs")));
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_le", stringType, "lhs", stringType, "rhs")));
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_gt", stringType, "lhs", stringType, "rhs")));
+    root.parts.add(generatePart(generateFunc(
+        stringType, "_string_ge", stringType, "lhs", stringType, "rhs")));
   }
 
   programPartNode generatePart(classDefNode node) {

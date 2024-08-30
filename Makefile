@@ -1,6 +1,6 @@
 CLASSFILE = bin/
 SRC = src/
-ANTLRPACK = antlr/antlr-4.13.1-complete.jar
+ANTLRPACK = /ulib/antlr-4.13.1-complete.jar
 MAIN = sema
 ASMBUILTIN = builtins/asmbuiltin.s
 

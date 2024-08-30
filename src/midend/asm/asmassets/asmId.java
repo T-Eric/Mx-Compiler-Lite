@@ -16,6 +16,8 @@ public class asmId {
   public int offset = 0; // address(sp)
   public irId ir = null;
 
+  public int hasBlocks=1;
+
   // globl
   public String globalInfo = null;
   public boolean isString = false;

@@ -1,14 +1,15 @@
-SRC_DIR = src
-BIN_DIR = bin
-CMD_DIR = cmd
+CLASSFILE = bin/
+SRC = src/
+ANTLRPACK = antlr/antlr-4.13.1-complete.jar
+MAIN = sema
+ASMBUILTIN = builtins/asmbuiltin.s
 
+.PHONY: build
 build:
-	bash $(CMD_DIR)/build.bash
-
+	find $(SRC) -name '*.java' | xargs javac -d $(CLASSFILE) -cp $(ANTLRPACK)
+.PHONY: run
 run:
-	bash $(CMD_DIR)/sema.bash
-
-clean:
-	rm -rf bin
-
-.PHONY: build run clean
+	java -cp $(CLASSFILE):$(ANTLRPACK) $(MAIN)
+	if [ $$? -eq 0 ]; then \
+		cat $(ASMBUILTIN); \
+	fi

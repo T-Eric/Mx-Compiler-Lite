@@ -19,12 +19,8 @@ InstLimit: -1
 class Slice_int {
   void init(int[] arr) {
     storage = arr;
-    printlnInt(arr.size());
-    printlnInt(storage.size());
     beg = 0;
     end = arr.size();
-    printlnInt(storage.size());
-    printlnInt(beg);printlnInt(end);
   }
 
   int size() {
@@ -40,7 +36,6 @@ class Slice_int {
   }
 
   Slice_int slice(int l, int r) {
-    printInt(l);print(" ");printlnInt(r);
     Slice_int res = new Slice_int();
     res.storage = storage;
     res.beg = beg + l;
@@ -108,7 +103,6 @@ void mergeSort(Slice_int a) {
   
   int n = a.size();
   int m = n / 2;
-  printlnInt(m);
   mergeSort(a.slice(0, m));
   mergeSort(a.slice(m, n));
   a.copy(makeSlice_int(merge(a.slice(0, m), a.slice(m, n))));

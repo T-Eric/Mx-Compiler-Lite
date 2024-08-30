@@ -45,13 +45,11 @@ global.c:
   }
 
   public void setL(asmId address, asmId dest) {
-    op = OpType.lw;
     rs1 = address;
     rd = dest;
   }
 
   public void setS(asmId reg, asmId address) {
-    op = OpType.sw;
     rs1 = reg;
     rs2 = address;
   }

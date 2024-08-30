@@ -1,11 +1,13 @@
 package midend.asm;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import midend.asm.asmassets.*;
 import midend.asm.asmassets.asmId.AsmType;
 import midend.asm.asmassets.asmId.RegName;
 import midend.asm.asmassets.statements.*;
 import midend.llvm_ir.irassets.irId;
+import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType.IRType;
 import midend.llvm_ir.irassets.statements.*;
@@ -20,7 +22,7 @@ public class asmBuilder {
   asmBlock curBlock = null;
 
   ArrayList<asmId> regs = new ArrayList<>();
-  ArrayList<irId> occured = new ArrayList<>(); // 记录这一轮指令后要扫除的栈空间
+  HashSet<irId> occured = new HashSet<>(); // 记录这一轮指令后要扫除的栈空间
 
   RegName sp = RegName.sp;
   RegName a0 = RegName.a0;
@@ -161,6 +163,7 @@ public class asmBuilder {
       b.funcName = ir.name;
       func.blocks.add(b);
     }
+    occured.clear();
     // 添加addi和ra
     // TODO
     int allocSize = 0;
@@ -190,7 +193,6 @@ public class asmBuilder {
     int offset = -8;
     for (var arg : func.args) {
       arg.setAddress(allocSize + offset, sp);
-
       offset -= 4;
     }
 
@@ -221,10 +223,14 @@ public class asmBuilder {
     for (var ins : ir.instructions)
       visitIns(ins);
     visitIns(ir.terminal);
+    ArrayList<irId> occurHere = new ArrayList<>();
     for (var id : occured)
-      if (id.refTime == 0 && id.type == IdType.Local)
+      if (id.refTime == 0 && id.type == IdType.Local) {
         curFunc.stack.recycle(asmId.idMap.get(id));
-    occured.clear();
+        occurHere.add(id);
+      }
+    for (var id : occurHere)
+      occured.remove(id);
     curBlock = null;
     return block;
   }
@@ -234,31 +240,25 @@ public class asmBuilder {
     switch (irins.type) {
     case Alloca: { // 分配指针
       allocaIns alloca = (allocaIns)irins;
-
-      if (alloca.allocaQuantity == null) {
-        asmId head = newId(alloca.result, sp); // 划定这个空间给他就行了
-
-        if (alloca.result.valueType.getDeref().theClass != null) {
-          asmClass theClass = world.classes.get(
-              alloca.result.valueType.getDeref().theClass.name);
-          head.theClass = theClass;
-        }
-      } else {
-        // 类似于堆上分发，不过是栈上连续空间
-        asmId head = newId(alloca.result, sp);
-        for (int i = 0; i < alloca.allocaQuantity.constValue; ++i) {
-          newId(null, sp);
-        }
-        // head=sp+4
-        asmIns li = new asmIns(null, asmIns.OpType.li);
-        li.setLi(new asmId(head.offset + 4), regi(a0));
-        curBlock.instructions.add(li);
-        asmIns add = new asmIns(null, asmIns.OpType.add);
-        add.setFull(regi(a0), regi(a0), regi(sp));
-        curBlock.instructions.add(add);
-        genStore(head, 4);
-        head.pointer = s1;
-      }
+      // 类似于堆上分发，不过是栈上连续空间
+      asmId head = new asmId(AsmType.Address, alloca.result);
+      head.setAddress(curFunc.stack.push_force(head, 1), sp);
+      head.size = 4;
+      alloca.result.refTime--;
+      occured.add(alloca.result);
+      int sum =
+          alloca.allocaQuantity == null ? 1 : alloca.allocaQuantity.constValue;
+      curFunc.stack.push_force(head, sum);
+      head.hasBlocks += sum;
+      // head=sp+4
+      asmIns li = new asmIns(null, asmIns.OpType.li);
+      li.setLi(new asmId(head.offset + 4), regi(a0));
+      curBlock.instructions.add(li);
+      asmIns add = new asmIns(null, asmIns.OpType.add);
+      add.setFull(regi(a0), regi(a0), regi(sp));
+      curBlock.instructions.add(add);
+      genStore(head, 4);
+      head.pointer = s1;
       return;
     }
     case Binary: {
@@ -511,7 +511,7 @@ public class asmBuilder {
           genStore(destptr, destptr.space);
           if (!baseId.alloca) {
             destptr.pointer = s1;
-            destptr.pointToHeap = get.result.valueType.dimension > 0;
+            destptr.pointToHeap = get.result.valueType.getDeref().dimension > 0;
             // destptr.classPointToHeap = get.result.valueType.dimension > 0;
           }
         }
@@ -521,17 +521,28 @@ public class asmBuilder {
     case Icmp: {
       icmpIns icmp = (icmpIns)irins;
       // 同样，不需要考虑堆问题，不需要考虑i问题
-      // 比较方式为做一减法，
+      // 比较方式为做一减法
       asmId res = newId(icmp.result, sp);
       // 处理常数
       asmId rs1 = null, rs2 = null;
       irId lhs = icmp.lhs, rhs = icmp.rhs;
 
       if (lhs.type != IdType.Constant && rhs.type != IdType.Constant) {
-        rs1 = getAsmId(lhs);
-        rs2 = getAsmId(rhs);
-        genLoadAt(rs1, a1, 4);
-        genLoadAt(rs2, a2, 4);
+        if (rhs.type == IdType.Null) {
+          rs1=getAsmId(lhs);
+          var r=rs1.pointer;
+          rs1.pointer=null;
+          genLoadAt(rs1, a1, 4);
+          rs1.pointer=r;
+          asmIns li=new asmIns(null, asmIns.OpType.li);
+          li.setLi(new asmId(0),regi(a2));
+          curBlock.instructions.add(li);
+        } else {
+          rs1 = getAsmId(lhs);
+          rs2 = getAsmId(rhs);
+          genLoadAt(rs1, a1, 4);
+          genLoadAt(rs2, a2, 4);
+        }
       } else if (lhs.type == IdType.Constant && rhs.type != IdType.Constant) {
         rs2 = getAsmId(rhs);
         genConstAt(lhs, a1);
@@ -599,18 +610,7 @@ public class asmBuilder {
       asmId res = asmId.idMap.containsKey(load.result) ? getAsmId(load.result)
                                                        : newId(load.result, sp);
       asmId addr = getAsmId(load.loadAddr);
-
-      // if (load.result.valueType.dimension > 0) {
-      //   int aa = 1;
-      // }
-      // 具有pointer且load.result也是指针，则这两者实际上指向同一个地址
-      if (load.result.valueType.dimension > 0 && addr.pointer != null) {
-        var r = addr.pointer;
-        addr.pointer = null;
-        genLoad(addr, res.space);
-        addr.pointer = r;
-      } else
-        genLoad(addr, res.space);
+      genLoad(addr, addr.space);
       genStore(res, 4);
       if (addr.pointToHeap)
         res.pointer = s1;
@@ -626,7 +626,10 @@ public class asmBuilder {
       if (insType.type != IRType.Void) {
         // 返回值加载进a0
         asmId retVal = getAsmId(ret.retValue);
+        var r = retVal.pointer;
+        retVal.pointer = null;
         genLoad(retVal, retVal.space); // retVal.ir.valueType.sizeof()
+        retVal.pointer = r;
       }
       curBlock.instructions.add(re);
       return;
@@ -647,13 +650,20 @@ public class asmBuilder {
       } else {
         // lw/lb a0, val; sw/sb a0, addr
         asmId val = getAsmId(store.storeValue);
-        RegName r = val.pointer;
-        val.pointer = null;
-        genLoad(val, addr.space);
-        val.pointer = r;
+        if (val == null) {
+          asmIns li = new asmIns(null, asmIns.OpType.li);
+          li.setLi(new asmId(0), regi(a0));
+          curBlock.instructions.add(li);
+        } else {
+          RegName r = val.pointer;
+          val.pointer = null;
+          genLoad(val, addr.space);
+          val.pointer = r;
+        }
+
         genStore(addr, addr.space);
 
-        addr.pointToHeap = (val.pointer != null);
+        addr.pointToHeap = (val != null && val.pointer != null);
       }
       return;
     }

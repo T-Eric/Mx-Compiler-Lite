@@ -720,7 +720,12 @@ public class irBuilder implements ASTVisitor {
      * 所以对于这个调用是函数还是可以将其交给funcNode处理？
      * 认为来到这一步是默认其为member valuable调用
      */
-
+    if (!it.isLvalue && (ins.result.valueType.dimension == 0 ||
+                         (ins.result.valueType.dimension == 1 &&
+                          ins.result.valueType.type == IRType.I8))) {
+      it.value = ins.result;
+      return;
+    }
     it.value = it.isLvalue ? ins.result : getPtrVal(ins.result);
   }
 
@@ -770,8 +775,9 @@ public class irBuilder implements ASTVisitor {
     var curClass = curFunc.theClass;
 
     if (it.funcExpr.exprType == ExprType.Member) {
-      ((memberExprNode)it.funcExpr).expr.accept(this);
-      objectPtr = ((memberExprNode)it.funcExpr).expr.value;
+      var objectVal = ((memberExprNode)it.funcExpr).expr;
+      objectVal.accept(this);
+      objectPtr = objectVal.value;
       if (objectPtr.valueType.isArray()) {
         if (funcName.equals("size") || funcName.equals("length")) {
           // 数组的长度存储在前头

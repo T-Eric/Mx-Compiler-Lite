@@ -38,7 +38,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/codegen/t8.mx";
+      String file = "testcases/sema/builtin-func-package/builtin-2.mx";
       input = new FileInputStream(file);
     }
 

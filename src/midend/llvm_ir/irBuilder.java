@@ -720,12 +720,6 @@ public class irBuilder implements ASTVisitor {
      * 所以对于这个调用是函数还是可以将其交给funcNode处理？
      * 认为来到这一步是默认其为member valuable调用
      */
-    if (!it.isLvalue && (ins.result.valueType.dimension == 0 ||
-                         (ins.result.valueType.dimension == 1 &&
-                          ins.result.valueType.type == IRType.I8))) {
-      it.value = ins.result;
-      return;
-    }
     it.value = it.isLvalue ? ins.result : getPtrVal(ins.result);
   }
 
@@ -762,6 +756,12 @@ public class irBuilder implements ASTVisitor {
      * 是交给isLvalue?ptr:getPtrVal(ptr)做的
      * 所以中间只需要连续生成getel即可
      */
+    if (!it.isLvalue && (arrayPtr.valueType.dimension == 0 ||
+                         (arrayPtr.valueType.dimension == 1 &&
+                          arrayPtr.valueType.type == IRType.I8))) {
+      it.value = arrayPtr;
+      return;
+    }
     it.value = it.isLvalue ? arrayPtr : getPtrVal(arrayPtr);
   }
 

@@ -1233,12 +1233,16 @@ public class irBuilder implements ASTVisitor {
     curFunc.blocks.add(trueBlock);
     curBlock = trueBlock;
     it.lhsExpr.accept(this);
+    if (it.lhsExpr.value.type == IdType.Null)
+      it.lhsExpr.value.valueType = new irType(IRType.I32);
     genBr(gotoBlock, false);
     irBlock trueTailBlock = curBlock;
 
     curFunc.blocks.add(falseBlock);
     curBlock = falseBlock;
     it.rhsExpr.accept(this);
+    if (it.rhsExpr.value.type == IdType.Null)
+      it.rhsExpr.value.valueType = new irType(IRType.I32);
     genBr(gotoBlock, false);
     irBlock falseTailBlock = curBlock;
 

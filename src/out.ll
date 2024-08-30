@@ -19,7 +19,34 @@ declare i32 @_string_parseInt(i8*)
 declare i32 @_string_ord(i8*, i32)
 declare i8* @_boolToString(i1)
 
-@.strconst.0 = private unnamed_addr constant [4 x i8] c"abc\00"
+
+%class.A = type { i32 }
+
+define void @class.A.A(%class.A* %0) {
+  ret void
+}
+
+define i32 @class.A.f(%class.A* %0) {
+  %2 = alloca i32
+  %3 = getelementptr %class.A, %class.A* %0, i32 0, i32 0
+  %4 = load i32, i32* %3
+  store i32 %4, i32* %2
+  br label %5
+
+5:
+  %6 = load i32, i32* %2
+  ret i32 %6
+}
+
+define %class.A* @class.A.copy(%class.A* %0) {
+  %2 = alloca %class.A*
+  store %class.A* %0, %class.A** %2
+  br label %3
+
+3:
+  %4 = load %class.A*, %class.A** %2
+  ret %class.A* %4
+}
 
 
 
@@ -28,102 +55,102 @@ define void @_init() {
   ret void
 }
 
-define i32 @global.f() {
-  %1 = alloca i32
-  %2 = alloca i32*
-  %3 = alloca i32, i32 3
-  store i32 2, i32* %3
-  %4 = getelementptr i32, i32* %3, i32 1
-  store i32 3, i32* %4
-  %5 = getelementptr i32, i32* %3, i32 2
-  store i32 3, i32* %5
-  %6 = call i8* @_new_array(i32 4, i32 3, i32* %3)
-  %7 = bitcast i8* %6 to i32***
-  %8 = load i32**, i32*** %7
-  %9 = getelementptr i32*, i32** %8, i32 0
-  %10 = load i32*, i32** %9
-  %11 = getelementptr i32, i32* %10, i32 1
-  %12 = load i32, i32* %11
-  store i32 %12, i32* %2
-  %13 = alloca i8*
-  %14 = mul i32 4, 3
-  %15 = add i32 %14, 4
-  %16 = call i8* @malloc(i32 %15)
-  %17 = bitcast i8* %16 to i32*
-  store i32 3, i32* %17
-  %18 = getelementptr i32, i32* %17, i32 1
-  %19 = bitcast i32* %18 to i8**
-  %20 = load i8*, i8** %19
-  %21 = getelementptr i8, i8* %20, i32 0
-  store i8* %21, i8** %13
-  %22 = alloca i32
-  %23 = alloca i32, i32 3
-  store i32 3, i32* %23
-  %24 = getelementptr i32, i32* %23, i32 1
-  store i32 3, i32* %24
-  %25 = getelementptr i32, i32* %23, i32 2
-  store i32 3, i32* %25
-  %26 = call i8* @_new_array(i32 4, i32 3, i32* %23)
-  %27 = bitcast i8* %26 to i8****
-  %28 = load i8***, i8**** %27
-  %29 = getelementptr i8**, i8*** %28, i32 0
-  %30 = load i8**, i8*** %29
-  %31 = getelementptr i8*, i8** %30, i32 1
-  %32 = load i8*, i8** %31
-  %33 = getelementptr i8, i8* %32, i32 2
-  %34 = bitcast i8* %33 to i32*
-  %35 = getelementptr i32, i32* %34, i32 -1
-  %36 = load i32, i32* %35
-  store i32 %36, i32* %22
-  %37 = load i32, i32* %22
-  store i32 %37, i32* %1
-  br label %38
-
-38:
-  %39 = load i32, i32* %1
-  ret i32 %39
-}
-
 define i32 @main() {
   call void @_init()
   %1 = alloca i32
-  %2 = alloca i8*
-  %3 = getelementptr [4 x i8], [4 x i8]* @.strconst.0, i32 0, i32 0
-  store i8* %3, i8** %2
-  %4 = load i8*, i8** %2
-  call void @_print(i8* %4)
-  %5 = load i8*, i8** %2
-  %6 = bitcast i8* %5 to i32*
-  %7 = getelementptr i32, i32* %6, i32 -1
-  %8 = load i32, i32* %7
-  %9 = call i8* @_toString(i32 %8)
-  call void @_println(i8* %9)
-  %10 = call i8* @_getString()
-  call void @_print(i8* %10)
-  %11 = call i8* @_toString(i32 3)
-  call void @_print(i8* %11)
-  %12 = alloca i8*
-  %13 = load i8*, i8** %2
-  %14 = call i8* @_string_substring(i8* %13, i32 0, i32 10)
-  store i8* %14, i8** %12
-  %15 = alloca i32
-  %16 = load i8*, i8** %2
-  %17 = call i32 @_string_parseInt(i8* %16)
-  store i32 %17, i32* %15
-  %18 = alloca i32
-  %19 = load i8*, i8** %2
-  %20 = call i32 @_string_ord(i8* %19, i32 3)
-  store i32 %20, i32* %18
-  %21 = alloca i8*
-  %22 = load i32, i32* %18
-  store i32 %22, i32* %1
-  %23 = call i32 @_getInt()
-  store i32 %23, i32* %1
-  br label %24
+  %2 = alloca %class.A*
+  %3 = call i8* @malloc(i32 4)
+  %4 = bitcast i8* %3 to %class.A*
+  call void @class.A.A(%class.A* %4)
+  store %class.A* %4, %class.A** %2
+  %5 = alloca %class.A*
+  %6 = load %class.A*, %class.A** %2
+  %7 = call i32 @class.A.f(%class.A* %6)
+  %8 = icmp slt i32 %7, 0
+  %9 = alloca i32
+  br i1 %8, label %1, label %2
 
-24:
-  %25 = load i32, i32* %1
-  ret i32 %25
+1:
+  store i32 null, i32* %9
+  br label %0
+
+2:
+  %10 = load %class.A*, %class.A** %2
+  %11 = call %class.A* @class.A.copy(%class.A* %10)
+  store %class.A* %11, %class.A** %9
+  br label %0
+
+0:
+  %12 = load i32, i32* %9
+  store i32 %12, i32* %5
+  %13 = alloca %class.A*
+  %14 = load %class.A*, %class.A** %5
+  %15 = call i32 @class.A.f(%class.A* %14)
+  %16 = icmp sgt i32 %15, 0
+  %17 = alloca %class.A*
+  br i1 %16, label %18, label %21
+
+18:
+  %19 = load %class.A*, %class.A** %5
+  %20 = call %class.A* @class.A.copy(%class.A* %19)
+  store %class.A* %20, %class.A** %17
+  br label %3
+
+21:
+  store i32 null, i32* %17
+  br label %3
+
+3:
+  %22 = load %class.A*, %class.A** %17
+  store %class.A* %22, %class.A** %13
+  %23 = alloca i32*
+  %24 = mul i32 4, 10
+  %25 = add i32 %24, 4
+  %26 = call i8* @malloc(i32 %25)
+  %27 = bitcast i8* %26 to i32*
+  store i32 10, i32* %27
+  %28 = getelementptr i32, i32* %27, i32 1
+  %29 = bitcast i32* %28 to i32*
+  store i32* %29, i32** %23
+  %30 = alloca i32*
+  %31 = load i32*, i32** %23
+  %32 = getelementptr i32, i32* %31, i32 9
+  %33 = load i32, i32* %32
+  %34 = load i32*, i32** %23
+  %35 = getelementptr i32, i32* %34, i32 1
+  %36 = load i32, i32* %35
+  %37 = icmp sgt i32 %33, %36
+  %38 = alloca i32*
+  br i1 %37, label %39, label %41
+
+39:
+  %40 = load i32*, i32** %23
+  store i32* %40, i32** %38
+  br label %42
+
+41:
+  store i32 null, i32* %38
+  br label %42
+
+42:
+  %43 = load i32*, i32** %38
+  store i32* %43, i32** %30
+  %44 = load %class.A*, %class.A** %13
+  %45 = call %class.A* @class.A.copy(%class.A* %44)
+  %46 = call %class.A* @class.A.copy(%class.A* %45)
+  %47 = call %class.A* @class.A.copy(%class.A* %46)
+  %48 = call %class.A* @class.A.copy(%class.A* %47)
+  %49 = call i32 @class.A.f(%class.A* %48)
+  %50 = load i32*, i32** %30
+  %51 = getelementptr i32, i32* %50, i32 0
+  %52 = load i32, i32* %51
+  %53 = add i32 %49, %52
+  store i32 %53, i32* %1
+  br label %54
+
+54:
+  %55 = load i32, i32* %1
+  ret i32 %55
 }
 
 

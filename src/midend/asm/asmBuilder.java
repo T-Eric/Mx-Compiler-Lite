@@ -7,7 +7,6 @@ import midend.asm.asmassets.asmId.AsmType;
 import midend.asm.asmassets.asmId.RegName;
 import midend.asm.asmassets.statements.*;
 import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType.IRType;
 import midend.llvm_ir.irassets.statements.*;
@@ -73,7 +72,6 @@ public class asmBuilder {
         world.dataBlock.instructions.add(ins);
       }
     }
-    // class offsets and methods get
     for (var cls : ir.classes.values()) {
       if (cls.builtIn)
         continue;
@@ -85,6 +83,11 @@ public class asmBuilder {
         curOffset += pa.b.sizeof();
       }
       world.classes.put(cls.name, ac);
+    }
+    // class offsets and methods get
+    for (var cls : ir.classes.values()) {
+      if (cls.builtIn)
+        continue;
 
       var ircst = cls.constructor;
       asmFunc cst = new asmFunc(ircst);
@@ -529,13 +532,13 @@ public class asmBuilder {
 
       if (lhs.type != IdType.Constant && rhs.type != IdType.Constant) {
         if (rhs.type == IdType.Null) {
-          rs1=getAsmId(lhs);
-          var r=rs1.pointer;
-          rs1.pointer=null;
+          rs1 = getAsmId(lhs);
+          var r = rs1.pointer;
+          rs1.pointer = null;
           genLoadAt(rs1, a1, 4);
-          rs1.pointer=r;
-          asmIns li=new asmIns(null, asmIns.OpType.li);
-          li.setLi(new asmId(0),regi(a2));
+          rs1.pointer = r;
+          asmIns li = new asmIns(null, asmIns.OpType.li);
+          li.setLi(new asmId(0), regi(a2));
           curBlock.instructions.add(li);
         } else {
           rs1 = getAsmId(lhs);

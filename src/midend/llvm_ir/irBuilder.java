@@ -686,6 +686,7 @@ public class irBuilder implements ASTVisitor {
 
   @Override
   public void visit(parenExprNode it) {
+    it.expr.isLvalue = it.isLvalue;
     it.expr.accept(this);
     it.value = it.expr.value;
   }

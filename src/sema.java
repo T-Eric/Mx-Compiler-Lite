@@ -38,7 +38,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/codegen/t25.mx";
+      String file = "testcases/codegen/e1.mx";
       input = new FileInputStream(file);
     }
 
@@ -70,7 +70,6 @@ public class sema {
       programNode ASTRoot = (programNode)builder.visit(parseTreeRoot);
       new ForwardCollector(mainScope).visit(ASTRoot);
       new SemanticChecker(mainScope).visit(ASTRoot);
-      // System.out.println("Successful!");
 
       var ir = new irBuilder(ASTRoot);
       ir.visit(ir.program);

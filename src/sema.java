@@ -38,7 +38,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/ternary-package/ternary-expression-5.mx";
+      String file = "testcases/sema/array-package/array-6.mx";
       input = new FileInputStream(file);
     }
 

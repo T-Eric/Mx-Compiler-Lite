@@ -4,7 +4,7 @@ import utility.position;
 abstract public class error extends RuntimeException {
   private position pos;
   private String message;
-  boolean in_oj = false;
+  boolean in_oj = true;
 
   public error(String message, position pos) {
     this.pos = pos;

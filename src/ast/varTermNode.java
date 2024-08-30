@@ -1,8 +1,8 @@
 package ast;
 import ast.ExprNodes.ExprNode;
-import midend.irassets.irType;
-import utility.position;
+import midend.llvm_ir.irassets.irType;
 import utility.Type;
+import utility.position;
 
 public class varTermNode extends ASTNode {
   public String name = null;

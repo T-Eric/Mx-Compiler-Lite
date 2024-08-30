@@ -1,7 +1,8 @@
 package ast;
 
-import utility.position;
+import midend.llvm_ir.irassets.irId;
 import utility.Type;
+import utility.position;
 
 public class atomNode extends ASTNode {
   public AtomType atomType = null;
@@ -10,7 +11,8 @@ public class atomNode extends ASTNode {
   public Integer decimalInt = null;
   public boolean bool = false;
 
-  public Type varType=null;// as a variable, which type
+  public Type varType = null; // as a variable, which type
+  public irId value = null;   // ir
 
   public atomNode(position pos) { super(pos); }
 
@@ -22,7 +24,7 @@ public class atomNode extends ASTNode {
     Bool,
     Null,
   }
-  
+
   @Override
   public void accept(ASTVisitor visitor) {
     visitor.visit(this);

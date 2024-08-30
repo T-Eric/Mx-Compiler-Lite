@@ -23,11 +23,8 @@ int main()
 {
 m = getInt();
 k = getInt();
-//scanf("%d%d",&m,&k);
 for(i=0;i<m;i++)
-//scanf("%d",&a[i]);
-a[i] = getInt();
+  a[i] = getInt();
 for(i=0;a[i]>=a[k-1]&&a[i] > 0&&i<m;i++);
 printInt(i);
-//printf("%d",i);
 }

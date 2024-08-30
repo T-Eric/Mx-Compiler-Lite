@@ -24,7 +24,7 @@ int main() {
 	k = getInt();
 	if(p-k>1) print("<< ");
 	for(i= p-k; i<=p+k;i++)
-	      if(1<= i && i <= n) {
+					if(1<= i && i <= n) {
 	         if(i==p){
 				 print("(");
 				 print(toString(i));

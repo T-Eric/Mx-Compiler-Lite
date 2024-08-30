@@ -10,6 +10,8 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import midend.asm.asmBuilder;
+import midend.llvm_ir.irBuilder;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -22,13 +24,13 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = false;
+    boolean run_by_bash = true;
     boolean watchTree = false;
-    boolean outToFile = false;
+    boolean outToFile = !run_by_bash;
 
     if (outToFile) {
       PrintStream ps = new PrintStream(
-          new BufferedOutputStream(new FileOutputStream("src/out.txt")), true);
+          new BufferedOutputStream(new FileOutputStream("src/out.ll")), true);
       System.setOut(ps);
     }
 
@@ -36,8 +38,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/const-array-package/const-array6.mx";
-      // testcases/sema/basic-package/basic-8.mx has sth wrong with oj test
+      String file = "testcases/codegen/sorting/merge_sort.mx";
       input = new FileInputStream(file);
     }
 
@@ -69,7 +70,24 @@ public class sema {
       programNode ASTRoot = (programNode)builder.visit(parseTreeRoot);
       new ForwardCollector(mainScope).visit(ASTRoot);
       new SemanticChecker(mainScope).visit(ASTRoot);
-      System.out.println("Successful!");
+      // System.out.println("Successful!");
+
+      var ir = new irBuilder(ASTRoot);
+      ir.visit(ir.program);
+      ir.world.genIndex();
+      if (outToFile)
+        System.out.println(ir.world.toString());
+
+      if (outToFile) {
+        PrintStream ps = new PrintStream(
+            new BufferedOutputStream(new FileOutputStream("testspace/test.s")),
+            true);
+        System.setOut(ps);
+      }
+
+      var asm = new asmBuilder(ir.world);
+      asm.visitWorld();
+      System.out.println(asm.world.toString());
     } catch (error e) {
       System.out.println(e.toString());
       throw new RuntimeException();

@@ -346,7 +346,7 @@ public class SemanticChecker implements ASTVisitor {
   @Override
   public void visit(forStmtNode it) {
     scopeStack.push(new scope(scopeStack.peek(), ms));
-    if (it.initExpr != null) {
+    if (it.initExpr != null||it.initVarDef!=null) {
       if (it.initWithVarDef)
         it.initVarDef.accept(this);
       else

@@ -1007,6 +1007,7 @@ Output:
 997 997
 998 998
 999 999
+
 === end ===
 ExitCode: 0
 InstLimit: -1
@@ -1025,7 +1026,7 @@ int getHash(int n) {
 }
 void put(int key, int data) {
 	int p;
-	node ptr = null;
+	node ptr = null; // 问题
 	p = getHash(key);
 	if (table[p] == null) {
 		table[p] = new node;

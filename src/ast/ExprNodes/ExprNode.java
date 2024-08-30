@@ -1,7 +1,7 @@
 package ast.ExprNodes;
 
 import ast.ASTNode;
-import midend.irassets.irId;
+import midend.llvm_ir.irassets.irId;
 import utility.Type;
 import utility.position;
 
@@ -10,6 +10,8 @@ public abstract class ExprNode extends ASTNode {
   public ExprType exprType;
   public OpType op = OpType.None;
   public irId value = null;
+
+  public boolean isLvalue = false;
 
   public ExprNode(position pos) { super(pos); }
 

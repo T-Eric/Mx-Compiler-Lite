@@ -1,1 +1,1 @@
-Set length after an null-length dimension!
+'This' cannot occur outside a class

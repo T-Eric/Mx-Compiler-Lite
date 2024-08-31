@@ -25,9 +25,9 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = false;
+    boolean run_by_bash = true;
     boolean watchTree = false;
-    boolean outToFile = false;
+    boolean outToFile = !run_by_bash;
 
     if (outToFile) {
       PrintStream ps = new PrintStream(
@@ -39,7 +39,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/array-package/array-9.mx";
+      String file = "testcases/sema/basic-package/basic-51.mx";
       input = new FileInputStream(file);
     }
 

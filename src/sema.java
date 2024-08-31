@@ -5,6 +5,7 @@ import frontend.SemanticChecker;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -24,9 +25,9 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = true;
+    boolean run_by_bash = false;
     boolean watchTree = false;
-    boolean outToFile = !run_by_bash;
+    boolean outToFile = false;
 
     if (outToFile) {
       PrintStream ps = new PrintStream(
@@ -38,7 +39,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/array-package/array-6.mx";
+      String file = "testcases/sema/array-package/array-9.mx";
       input = new FileInputStream(file);
     }
 
@@ -86,6 +87,16 @@ public class sema {
 
       var asm = new asmBuilder(ir.world);
       asm.visitWorld();
+      try (FileInputStream fis = new FileInputStream("builtin.s")) {
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = fis.read(buffer)) != -1) {
+          System.out.write(buffer, 0, length);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
       System.out.println(asm.world.toString());
     } catch (error e) {
       System.out.println(e.toString());

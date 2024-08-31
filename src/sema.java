@@ -25,7 +25,7 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = false;
+    boolean run_by_bash = true;
     boolean watchTree = false;
     boolean outToFile = !run_by_bash;
 

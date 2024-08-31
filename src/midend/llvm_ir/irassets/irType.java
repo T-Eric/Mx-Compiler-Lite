@@ -92,7 +92,7 @@ public class irType {
     } else {
       switch (type) {
       case I1:
-        return 1;
+        return 4;// TODO 原本是1，但是dark要求align 4（真是的，堆上的事干嘛咱来管）
       case I8:
         return 1;
       case I32:

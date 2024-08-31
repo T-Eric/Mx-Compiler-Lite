@@ -25,7 +25,7 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = true;
+    boolean run_by_bash = false;
     boolean watchTree = false;
     boolean outToFile = !run_by_bash;
 
@@ -39,7 +39,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/codegen/t75.mx";
+      String file = "testcases/codegen/t64.mx";
       input = new FileInputStream(file);
     }
 

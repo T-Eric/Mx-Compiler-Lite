@@ -1,5 +1,6 @@
 package midend.asm.asmassets;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.irId.IdType;
@@ -15,8 +16,9 @@ public class asmId {
   public String info = null;
   public int offset = 0; // address(sp)
   public irId ir = null;
+  public ArrayList<asmId> link = new ArrayList<>();
 
-  public int hasBlocks=1;
+  public int hasBlocks = 1;
 
   // globl
   public String globalInfo = null;
@@ -34,7 +36,6 @@ public class asmId {
   // 由getelementptr引发的血案：引入多级寄存器
   public RegName pointer = null;      // 标识是否是堆指针
   public boolean pointToHeap = false; //标识是否指向堆指针
-  public boolean alloca = false;
   public int derefOffset = 0;
   // public boolean classPointToHeap=false;
 
@@ -96,6 +97,28 @@ public class asmId {
     this.reg = reg;
   }
 
+  public void linkAddress() {
+    if (link != null) {
+      for (var lk : link) {
+        lk.setAddress(offset, reg);
+        lk.info = info;
+        lk.ir = ir;
+        lk.hasBlocks = hasBlocks;
+        lk.globalInfo = globalInfo;
+        lk.isString = isString;
+        lk.actualSize = actualSize;
+        lk.originVar = originVar;
+        lk.isLo = isLo;
+        lk.space = space;
+        lk.theClass = theClass;
+        lk.size = size;
+        lk.pointer = pointer;
+        lk.pointToHeap = pointToHeap;
+        lk.derefOffset = derefOffset;
+      }
+    }
+  }
+
   public void setLabel(String prefix) { info = prefix + "." + info; }
 
   public void setGlobalPart(asmId orig, boolean lo, RegName re) {
@@ -112,6 +135,23 @@ public class asmId {
   public asmId getDeref() {
     assert !(pointer == null);
     asmId ret = new asmId(derefOffset, pointer);
+    return ret;
+  }
+
+  public asmId copyAddr() {
+    asmId ret = new asmId(offset, reg);
+    ret.space = space;
+    ret.derefOffset = derefOffset;
+    ret.pointer = pointer;
+    ret.pointToHeap = pointToHeap;
+    ret.hasBlocks = hasBlocks;
+    ret.isString = isString;
+
+    ret.size = size;
+    ret.space = space;
+    ret.theClass = theClass;
+
+    link.add(ret);
     return ret;
   }
 

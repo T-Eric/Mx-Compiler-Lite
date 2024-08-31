@@ -166,7 +166,6 @@ public class asmBuilder {
       b.funcName = ir.name;
       func.blocks.add(b);
     }
-    occured.clear();
     // 添加addi和ra
     // TODO
     int allocSize = 0;
@@ -188,23 +187,51 @@ public class asmBuilder {
     first.pre.add(stackAlloc);
     // 添加sw ra和lw ra
     func.raAddr.setAddress(allocSize - 4, sp);
+    int raTimes = 0;
+    for (; func.raAddr.offset > 2000; func.raAddr.offset -= 2000, ++raTimes) {
+      asmIns addi = new asmIns(null, asmIns.OpType.addi);
+      addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000), regi(sp));
+      first.pre.add(addi);
+    }
     asmIns raSave = new asmIns(null, asmIns.OpType.sw);
-    raSave.setS(func.raAddr, regi(RegName.ra));
+    var tmpAddr = new asmId(func.raAddr.offset, sp);
+    raSave.setS(tmpAddr, regi(RegName.ra));
     first.pre.add(raSave);
+    // 现在就把sp减回去
+    for (int i = raTimes; i > 0; --i) {
+      asmIns addi = new asmIns(null, asmIns.OpType.addi);
+      addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(-2000),
+                       regi(sp));
+      first.pre.add(addi);
+    }
 
     // 此时为各个参数赋值
     int offset = -8;
     for (var arg : func.args) {
       arg.setAddress(allocSize + offset, sp);
+      arg.linkAddress();
       offset -= 4;
     }
 
     asmIns originRet = last.instructions.get(last.instructions.size() - 1);
     last.instructions.remove(last.instructions.size() - 1);
-    asmIns raLoad = new asmIns(null, asmIns.OpType.lw);
-    raLoad.setL(func.raAddr, regi(RegName.ra));
 
+    for (int i = raTimes; i > 0; --i) {
+      asmIns addi = new asmIns(null, asmIns.OpType.addi);
+      addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000), regi(sp));
+      last.instructions.add(addi);
+    }
+    asmIns raLoad = new asmIns(null, asmIns.OpType.lw);
+    var tempAddr = new asmId(func.raAddr.offset, sp);
+    raLoad.setL(tempAddr, regi(RegName.ra));
     last.instructions.add(raLoad);
+    for (; raTimes > 0; --raTimes, func.raAddr.offset += 2000) {
+      asmIns addi = new asmIns(null, asmIns.OpType.addi);
+      addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(-2000),
+                       regi(sp));
+      last.instructions.add(addi);
+    }
+
     for (int i = 2000; i < allocSize; i += 2000) {
       asmIns stackReturn = new asmIns(null, asmIns.OpType.addi);
       stackReturn.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000),
@@ -223,8 +250,17 @@ public class asmBuilder {
     asmBlock block = new asmBlock(ir, true);
     curBlock = block;
     // 初步设想：最简单的逻辑是直接翻译。应该可以出正确的事就是了
-    for (var ins : ir.instructions)
+    for (var ins : ir.instructions) {
       visitIns(ins);
+      ArrayList<irId> occurHere = new ArrayList<>();
+      for (var id : occured)
+        if (id.refTime == 0 && id.type == IdType.Local) {
+          curFunc.stack.recycle(asmId.idMap.get(id));
+          occurHere.add(id);
+        }
+      for (var id : occurHere)
+        occured.remove(id);
+    }
     visitIns(ir.terminal);
     ArrayList<irId> occurHere = new ArrayList<>();
     for (var id : occured)
@@ -234,6 +270,7 @@ public class asmBuilder {
       }
     for (var id : occurHere)
       occured.remove(id);
+    occured.clear();
     curBlock = null;
     return block;
   }
@@ -466,13 +503,11 @@ public class asmBuilder {
         destptr.space = get.result.valueType.getDeref()
                             .sizeof(); // TODO 是dest还是destptr的？
         genStore(destptr, 4);
-        if (!baseId.alloca) {   // TODO 史山
-          destptr.pointer = s1; // 下次可以直接0(s1)做地址
-          // destptr.pointToHeap = true;
-          destptr.pointToHeap =
-              get.objectPtr.valueType.getDeref().dimension > 0;
-          // 做的时候倒是不用动用s1，之后再说
-        }
+        destptr.pointer = s1; // 下次可以直接0(s1)做地址
+        // destptr.pointToHeap = true;
+        destptr.pointToHeap = get.objectPtr.valueType.getDeref().dimension > 0;
+        // 做的时候倒是不用动用s1，之后再说
+
       } else {
         if (get.objectPtr.valueType.getDeref().arrayLength != -1) {
           // lui a0, %hi; addi a0, a0, %lo; genstore(dest, dest.space)
@@ -511,12 +546,11 @@ public class asmBuilder {
           // 如果result也是指针，两级指针会重合
           asmId destptr = newId(get.result, sp);
           destptr.space = get.result.valueType.getDeref().sizeof();
-          genStore(destptr, destptr.space);
-          if (!baseId.alloca) {
-            destptr.pointer = s1;
-            destptr.pointToHeap = get.result.valueType.getDeref().dimension > 0;
-            // destptr.classPointToHeap = get.result.valueType.dimension > 0;
-          }
+          genStore(destptr, 4);
+          // 原本是destptr.space，但是space应该是其指向物的空间，应当在load和store时用一用
+          destptr.pointer = s1;
+          destptr.pointToHeap = get.result.valueType.getDeref().dimension > 0;
+          // destptr.classPointToHeap = get.result.valueType.dimension > 0
         }
       }
       return;
@@ -699,19 +733,34 @@ public class asmBuilder {
         curBlock.instructions.add(load);
       }
     } else {
+      // 假如超出2047范围，先给sp加，后面减回去
+      int times = 0;
+      var tempAddress = address.copyAddr();
+      for (; tempAddress.offset > 2000; tempAddress.offset -= 2000, ++times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
+      }
       asmIns.OpType op = size == 4 ? asmIns.OpType.lw : asmIns.OpType.lb;
-      if (address.pointer != null) {
+      if (tempAddress.pointer != null) {
         asmIns ins = new asmIns(null, asmIns.OpType.lw);
-        ins.setL(address, regi(address.pointer));
+        ins.setL(tempAddress, regi(tempAddress.pointer));
         curBlock.instructions.add(ins);
-        asmId deref = address.getDeref();
+        asmId deref = tempAddress.getDeref();
         asmIns extra = new asmIns(null, op);
         extra.setL(deref, regi(a0));
         curBlock.instructions.add(extra);
       } else {
         asmIns ins = new asmIns(null, op);
-        ins.setL(address, regi(a0));
+        ins.setL(tempAddress, regi(a0));
         curBlock.instructions.add(ins);
+      }
+      for (; times > 0; --times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(-2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
       }
     }
   }
@@ -737,19 +786,33 @@ public class asmBuilder {
         curBlock.instructions.add(load);
       }
     } else {
+      int times = 0;
+      var tempAddress = address.copyAddr();
+      for (; tempAddress.offset > 2000; tempAddress.offset -= 2000, ++times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
+      }
       asmIns.OpType op = size == 4 ? asmIns.OpType.lw : asmIns.OpType.lb;
-      if (address.pointer != null) {
+      if (tempAddress.pointer != null) {
         asmIns ins = new asmIns(null, asmIns.OpType.lw);
-        ins.setL(address, regi(address.pointer));
+        ins.setL(tempAddress, regi(tempAddress.pointer));
         curBlock.instructions.add(ins);
-        asmId deref = address.getDeref();
+        asmId deref = tempAddress.getDeref();
         asmIns extra = new asmIns(null, op);
         extra.setL(deref, regi(reg));
         curBlock.instructions.add(extra);
       } else {
         asmIns ins = new asmIns(null, op);
-        ins.setL(address, regi(reg));
+        ins.setL(tempAddress, regi(reg));
         curBlock.instructions.add(ins);
+      }
+      for (; times > 0; --times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(-2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
       }
     }
   }
@@ -783,26 +846,42 @@ public class asmBuilder {
       }
 
     } else {
+      int times = 0;
+      var tempAddress = address.copyAddr();
+      for (; tempAddress.offset > 2000; tempAddress.offset -= 2000, ++times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
+      }
+
       asmIns.OpType op = size == 4 ? asmIns.OpType.sw : asmIns.OpType.sb;
-      if (address.pointer != null) {
+      if (tempAddress.pointer != null) {
         // 由于存到堆里，故不要下面多的那一步
         asmIns extra = new asmIns(null, asmIns.OpType.lw);
-        extra.setL(address, regi(address.pointer));
+        extra.setL(tempAddress, regi(tempAddress.pointer));
         curBlock.instructions.add(extra);
-        asmId deref = address.getDeref();
+        asmId deref = tempAddress.getDeref();
         asmIns ins = new asmIns(null, op);
         ins.setS(deref, regi(a0));
         curBlock.instructions.add(ins);
       } else {
         asmIns ins = new asmIns(null, op);
         if (size != 4)
-          if (address.reg == sp) {
+          if (tempAddress.reg == sp) {
             asmIns setter = new asmIns(null, asmIns.OpType.sw);
-            setter.setS(address, regi(RegName.zero));
+            setter.setS(tempAddress, regi(RegName.zero));
             curBlock.instructions.add(setter);
           }
-        ins.setS(address, regi(a0));
+        ins.setS(tempAddress, regi(a0));
         curBlock.instructions.add(ins);
+      }
+
+      for (; times > 0; --times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(-2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
       }
     }
   }
@@ -834,26 +913,42 @@ public class asmBuilder {
         curBlock.instructions.add(store);
       }
     } else {
+      int times = 0;
+      var tempAddress = address.copyAddr();
+      for (; tempAddress.offset > 2000; tempAddress.offset -= 2000, ++times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
+      }
+
       asmIns.OpType op = size == 4 ? asmIns.OpType.sw : asmIns.OpType.sb;
-      if (address.pointer != null) {
+      if (tempAddress.pointer != null) {
         // 由于存到堆里，故不要下面多的那一步
         asmIns extra = new asmIns(null, asmIns.OpType.lw);
-        extra.setL(address, regi(address.pointer));
+        extra.setL(tempAddress, regi(tempAddress.pointer));
         curBlock.instructions.add(extra);
-        asmId deref = address.getDeref();
+        asmId deref = tempAddress.getDeref();
         asmIns ins = new asmIns(null, op);
         ins.setS(deref, regi(reg));
         curBlock.instructions.add(ins);
       } else {
         asmIns ins = new asmIns(null, op);
         if (size != 4)
-          if (address.reg == sp) {
+          if (tempAddress.reg == sp) {
             asmIns setter = new asmIns(null, asmIns.OpType.sw);
-            setter.setS(address, regi(RegName.zero));
+            setter.setS(tempAddress, regi(RegName.zero));
             curBlock.instructions.add(setter);
           }
-        ins.setS(address, regi(reg));
+        ins.setS(tempAddress, regi(reg));
         curBlock.instructions.add(ins);
+      }
+
+      for (; times > 0; --times) {
+        asmIns addi = new asmIns(null, asmIns.OpType.addi);
+        addi.setArithImm(asmIns.OpType.addi, regi(sp), new asmId(-2000),
+                         regi(sp));
+        curBlock.instructions.add(addi);
       }
     }
   }

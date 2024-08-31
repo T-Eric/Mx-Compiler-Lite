@@ -726,3 +726,4 @@ _new_array:                             # @_new_array
         .size   .L.str.5, 6
 
         .section        ".note.GNU-stack","",@progbits
+

@@ -39,7 +39,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/sema/basic-package/basic-51.mx";
+      String file = "testcases/codegen/t75.mx";
       input = new FileInputStream(file);
     }
 
@@ -87,6 +87,7 @@ public class sema {
 
       var asm = new asmBuilder(ir.world);
       asm.visitWorld();
+
       try (FileInputStream fis = new FileInputStream("builtin.s")) {
         byte[] buffer = new byte[1024];
         int length;

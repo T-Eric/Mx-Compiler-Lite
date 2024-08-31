@@ -55,8 +55,8 @@ public class asmFunc extends asmStatement {
       }
       ret.append(blk);
     }
-    ret.append(".Lfunc_end" + Integer.toString(LfuncEnd) + ":\n\t.size\t" +
-               label.info + ", .Lfunc_end" + Integer.toString(LfuncEnd++) +
+    ret.append(".lfunc_end" + Integer.toString(LfuncEnd) + ":\n\t.size\t" +
+               label.info + ", .lfunc_end" + Integer.toString(LfuncEnd++) +
                "-" + label.info + "\n\n");
     return ret.toString();
   }

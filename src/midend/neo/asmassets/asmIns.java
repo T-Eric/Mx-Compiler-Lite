@@ -1,11 +1,9 @@
-package midend.asm.asmassets.statements;
+package midend.neo.asmassets;
 
 import java.util.ArrayList;
-import midend.asm.asmassets.asmId;
-import midend.asm.asmassets.asmStatement;
 import midend.llvm_ir.irassets.statements.irIns;
 
-public class asmIns extends asmStatement {
+public class asmIns {
   public irIns ir = null;
   public OpType op = null;
   public asmId rs1 = null, rs2 = null, imm = null, rd = null; // ins
@@ -34,6 +32,8 @@ global.c:
     this.op = op;
   }
 
+  public asmIns(OpType op) { this.op = op; }
+
   public asmIns(DirectiveType dt) {
     op = OpType.Directive;
     directiveType = dt;
@@ -50,8 +50,8 @@ global.c:
   }
 
   public void setS(asmId reg, asmId address) {
-    rs1 = reg;
-    rs2 = address;
+    rs2 = reg;
+    rs1 = address;
   }
 
   public void setBz(asmId cond, asmId label) {
@@ -75,8 +75,7 @@ global.c:
     imm = imm_;
   }
 
-  public void setArithImm(OpType op_, asmId op1, asmId imm, asmId result) {
-    op = op_;
+  public void setArithImm(asmId op1, asmId imm, asmId result) {
     rs1 = op1;
     this.imm = imm;
     rd = result;
@@ -144,7 +143,7 @@ global.c:
         // l rd, rs1
         ret.append(String.format("%s%s, %s", formatOp, rd, rs1));
       } else if (op == OpType.sb || op == OpType.sw) {
-        // s rs1, rs2
+        // s rs2, rs1
         ret.append(String.format("%s%s, %s", formatOp, rs2, rs1));
       } else if (op.ordinal() >= OpType.seqz.ordinal() &&
                  op.ordinal() <= OpType.sgtz.ordinal()) {
@@ -152,13 +151,16 @@ global.c:
       } else if (op == OpType.ret) {
         // ret
         ret.append(op);
+      } else if (op == OpType.mv) {
+        // mv dest, src
+        ret.append(String.format("%s%s, %s", formatOp, rd, rs1));
       } else
         throw new UnsupportedOperationException();
     }
     // 注释
-    if (ir != null && ir.result != null) {
-      ret.append(String.format("\t\t# %s", ir.result));
-    }
+    if (ir != null)
+      ret.append(String.format("\t\t# %s", ir));
+
     return ret.toString();
   }
 

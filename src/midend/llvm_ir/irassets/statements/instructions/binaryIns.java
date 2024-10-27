@@ -1,5 +1,7 @@
 package midend.llvm_ir.irassets.statements.instructions;
 
+import java.util.Collections;
+import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.statements.irIns;
@@ -60,5 +62,38 @@ public class binaryIns extends irIns {
       break;
     }
     return String.format("%s = %s %s %s, %s", result, opStr, insType, lhs, rhs);
+  }
+
+  @Override
+  public HashSet<irId> useValue() {
+    if (useIds != null)
+      return useIds;
+    useIds = new HashSet<irId>();
+    if (lhs.isLocal())
+      useIds.add(lhs);
+    if (rhs.isLocal())
+      useIds.add(rhs);
+    return useIds;
+  }
+
+  @Override
+  public HashSet<irId> defValue() {
+    if (defIds != null)
+      return defIds;
+    if (result.isLocal())
+      defIds = new HashSet<>(Collections.singleton(result));
+    else
+      defIds = new HashSet<>();
+    return defIds;
+  }
+
+  @Override
+  public void rewrite(irId origin, irId copy) {
+    if (lhs.equals(origin))
+      lhs = copy;
+    else if (rhs.equals(origin))
+      rhs = copy;
+    // else if (result .equals(origin))
+    //   result = copy;
   }
 }

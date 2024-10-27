@@ -1,9 +1,10 @@
 package midend.llvm_ir.irassets.statements;
 
 import java.util.ArrayList;
-import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irStatement;
-import midend.llvm_ir.irassets.irType;
+import java.util.HashMap;
+import java.util.HashSet;
+import midend.llvm_ir.irassets.*;
+import midend.llvm_ir.irassets.statements.instructions.allocaIns;
 
 public class irFunc extends irStatement {
   public boolean builtIn = false;
@@ -16,6 +17,10 @@ public class irFunc extends irStatement {
   public irId retValPtr = null;
   public irBlock retBlock = null;
   public ArrayList<irBlock> blocks = new ArrayList<>();
+
+  // regAlloc
+  public HashSet<irId> ids = new HashSet<>();
+  public HashMap<irId, allocaIns> remainAllocas = new HashMap<>();
 
   @Override
   public void genIndex() {
@@ -38,6 +43,7 @@ public class irFunc extends irStatement {
       ret.setLength(ret.length() - 2);
     }
     ret.append(") {\n");
+    // retblock already in blocks
     irBlock.setFirstBlock();
     blocks.forEach(block -> ret.append(block).append("\n"));
     ret.deleteCharAt(ret.length() - 1);

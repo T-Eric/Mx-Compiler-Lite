@@ -1,5 +1,7 @@
 package midend.llvm_ir.irassets.statements.instructions;
 
+import java.util.Collections;
+import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.irType.IRType;
@@ -25,5 +27,30 @@ public class retIns extends irIns {
       return "ret " + insType;
     else
       return "ret " + insType + " " + retValue;
+  }
+
+  @Override
+  public HashSet<irId> useValue() {
+    if (useIds != null)
+      return useIds;
+    if (result.valueType.type == IRType.Void)
+      useIds = new HashSet<irId>();
+    else
+      useIds = new HashSet<irId>(Collections.singleton(retValue));
+    return useIds;
+  }
+
+  @Override
+  public HashSet<irId> defValue() {
+    if (defIds != null)
+      return defIds;
+    defIds = new HashSet<irId>();
+    return defIds;
+  }
+
+  @Override
+  public void rewrite(irId origin, irId copy) {
+    if (retValue.equals(origin))
+      retValue = copy;
   }
 }

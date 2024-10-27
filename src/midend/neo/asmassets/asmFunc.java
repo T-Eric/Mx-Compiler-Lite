@@ -1,39 +1,37 @@
-package midend.asm.asmassets.statements;
+package midend.neo.asmassets;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import midend.asm.asmassets.asmId;
-import midend.asm.asmassets.asmId.AsmType;
-import midend.asm.asmassets.asmStack;
-import midend.asm.asmassets.asmStatement;
 import midend.llvm_ir.irassets.statements.irFunc;
+import midend.neo.asmassets.asmId.AsmType;
+import midend.neo.regAllocor;
 
-public class asmFunc extends asmStatement {
+public class asmFunc {
   public irFunc ir = null;
   // starts with stack allocation and ends with stack recycle
   // 开头要.globl funcname，.type <funcName>,@function
   public static int LfuncEnd = 0;
-  public static HashMap<irFunc, asmFunc> irFuncMap = new HashMap<>();
+  // public static HashMap<irFunc, asmFunc> irFuncMap = new HashMap<>();
   public ArrayList<asmId> args = new ArrayList<>();
   public asmStack stack = null;
+  public regAllocor rac = null;
   public ArrayList<asmBlock> blocks = new ArrayList<>();
   // 末尾要.Lfunc_endi、、.size <func_name>, .Lfunc_endi-<func_name>
 
   public asmId label;
-  public asmId raAddr = null;
+  public asmIns ret = null; // 暂存的ret语句
 
   public asmFunc(irFunc ir) { // irStatement = irFunc
     this.ir = ir;
-    irFuncMap.put(ir, this);
+    // irFuncMap.put(ir, this);
 
     stack = new asmStack();
+    rac = new regAllocor(ir);
     label = new asmId(AsmType.Label, null);
     label.info = ir.name; // entry block label, also function name
   }
 
   @Override
   public String toString() {
-    // setInit();
     var ret = new StringBuilder();
     ret.append("\t.globl\t" + label.info + "\n");
     ret.append("\t.type\t" + label.info + ",@function\n");

@@ -1,5 +1,7 @@
 package midend.llvm_ir.irassets.statements.instructions;
 
+import java.util.Collections;
+import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.statements.irIns;
 
@@ -25,5 +27,30 @@ public class brIns extends irIns {
                            trueLabel, falseLabel);
     else
       return String.format("br label %s", trueLabel);
+  }
+
+  @Override
+  public HashSet<irId> useValue() {
+    if (useIds != null)
+      return useIds;
+    if (cond != null && cond.isLocal())
+      useIds = new HashSet<irId>(Collections.singleton(cond));
+    else
+      useIds = new HashSet<irId>();
+    return useIds;
+  }
+
+  @Override
+  public HashSet<irId> defValue() {
+    if (defIds != null)
+      return defIds;
+    defIds = new HashSet<irId>();
+    return defIds;
+  }
+
+  @Override
+  public void rewrite(irId origin, irId copy) {
+    if (cond == origin)
+      cond = copy;
   }
 }

@@ -83,7 +83,6 @@ public class irBuilder implements ASTVisitor {
   @Override
   public void visit(funcDefNode it) {
     boolean isMethod = curClass != null;
-    // use outer [curBlock] to distinguish the block
 
     if (hasDeclared) {
       // skip builtin
@@ -131,6 +130,7 @@ public class irBuilder implements ASTVisitor {
       var retBlock = new irBlock();
       var retInst = new retIns(func.retType);
       func.retBlock = retBlock;
+      // 直接返回局部变量或参数都可行，但是全局变量则不行
       if (func.retType.type != IRType.Void) {
         func.retValPtr = genAlloca(func.retType);
         loadIns loadRetValueIns = new loadIns(func.retType);
@@ -213,6 +213,9 @@ public class irBuilder implements ASTVisitor {
       // member value
       ins = new allocaIns(it.valueType);
       curBlock.instructions.add(ins);
+      // optimize: default zero
+      if (it.valueType.type == IRType.I32 && !it.valueType.isArray())
+        genPtrAssign(genI32Const(0), ins.result);
       scopeStack.peek().put(it.name, ins.result);
     }
     // assignment
@@ -1105,7 +1108,7 @@ public class irBuilder implements ASTVisitor {
             lhsValue.valueType = rhsValue.valueType;
         }
       }
-      assert (lhsValue.valueType.equals(rhsValue.valueType));
+
       if (lhsValue.valueType.isString()) {
         irType retType;
         if (it.op == OpType.Add)
@@ -1256,6 +1259,16 @@ public class irBuilder implements ASTVisitor {
       // var phi = new phiIns();
       var alloca = new allocaIns(it.lhsExpr.value.valueType);
       originBlock.instructions.add(alloca);
+
+      // default zero for i32er
+      if (it.lhsExpr.value.valueType.type == IRType.I32 &&
+          !it.lhsExpr.value.valueType.isArray()) {
+        var ins = new storeIns(new irType(IRType.I32));
+        ins.storeValue = genI32Const(0);
+        ins.storeAddr = alloca.result;
+        originBlock.instructions.add(ins);
+      }
+
       // phi.args.add(new Pair<irId, irId>(it.lhsExpr.value, trueBlock.label));
       // phi.args.add(new Pair<irId, irId>(it.rhsExpr.value, falseBlock.label));
       curBlock = trueTailBlock;
@@ -1479,6 +1492,12 @@ public class irBuilder implements ASTVisitor {
   irId genAlloca(irType type) {
     var ins = new allocaIns(type);
     curBlock.instructions.add(ins);
+
+    // optim:为使得有初值不至于乱，为所有i32alloca强制赋值0
+    if (type.dimension == 0 && type.type == IRType.I32 && !type.isArray())
+      //赋予一个
+      genPtrAssign(genI32Const(0), ins.result);
+
     return ins.result;
   }
 
@@ -1494,6 +1513,7 @@ public class irBuilder implements ASTVisitor {
     var ins = new brIns();
     ins.trueLabel = block.label;
     curBlock.terminal = ins;
+
     if (gotoBlock)
       curBlock = block; // as an absolutely goto statement
   }

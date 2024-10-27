@@ -1,4 +1,6 @@
 import ast.programNode;
+import backend.asmPreOptimizer;
+import backend.irOptimizer;
 import frontend.ASTBuilder;
 import frontend.ForwardCollector;
 import frontend.SemanticChecker;
@@ -11,8 +13,9 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import midend.asm.asmBuilder;
+// import midend.asm.asmBuilder;
 import midend.llvm_ir.irBuilder;
+import midend.neo.neoBuilder;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -25,9 +28,10 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = true;
+    boolean run_by_bash = false;
     boolean watchTree = false;
     boolean outToFile = !run_by_bash;
+    boolean debug_ir = false;
 
     if (outToFile) {
       PrintStream ps = new PrintStream(
@@ -39,7 +43,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/codegen/t64.mx";
+      String file = "testcases/codegen/t30.mx";
       input = new FileInputStream(file);
     }
 
@@ -75,30 +79,57 @@ public class sema {
       var ir = new irBuilder(ASTRoot);
       ir.visit(ir.program);
       ir.world.genIndex();
-      if (outToFile)
-        System.out.println(ir.world.toString());
 
-      if (outToFile) {
-        PrintStream ps = new PrintStream(
-            new BufferedOutputStream(new FileOutputStream("testspace/test.s")),
-            true);
-        System.setOut(ps);
-      }
-
-      var asm = new asmBuilder(ir.world);
-      asm.visitWorld();
-
-      try (FileInputStream fis = new FileInputStream("builtin.s")) {
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = fis.read(buffer)) != -1) {
-          System.out.write(buffer, 0, length);
+      // Optimize
+      for (var cls : ir.world.classes.values()) {
+        if (!cls.builtIn) {
+          var opter = new irOptimizer(cls.constructor);
+          var preparer = new asmPreOptimizer(cls.constructor);
+          opter.ssa();
+          preparer.activeAnalysis();
         }
-      } catch (IOException e) {
-        e.printStackTrace();
       }
 
-      System.out.println(asm.world.toString());
+      for (var func : ir.world.functions.values()) {
+        if (!func.builtIn) {
+          var opter = new irOptimizer(func);
+          var preparer = new asmPreOptimizer(func);
+          opter.ssa();
+          preparer.activeAnalysis();
+        }
+      }
+
+      String irCode = ir.world.toString();
+      if (outToFile)
+        System.out.println(irCode);
+
+      if (!debug_ir) {
+        if (outToFile) {
+          PrintStream ps = new PrintStream(
+              new BufferedOutputStream(new FileOutputStream("src/out.s")),
+              true);
+          System.setOut(ps);
+        }
+
+        // var asm = new asmBuilder(ir.world);
+        // asm.visitWorld();
+
+        var neo = new neoBuilder(ir.world);
+        neo.visitWorld();
+
+        if (!outToFile)
+          try (FileInputStream fis = new FileInputStream("builtin.s")) {
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = fis.read(buffer)) != -1) {
+              System.out.write(buffer, 0, length);
+            }
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+
+        System.out.println(neo.world.toString());
+      }
     } catch (error e) {
       System.out.println(e.toString());
       throw new RuntimeException();

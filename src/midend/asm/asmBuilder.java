@@ -167,7 +167,6 @@ public class asmBuilder {
       func.blocks.add(b);
     }
     // 添加addi和ra
-    // TODO
     int allocSize = 0;
     for (; allocSize <= 65536; allocSize += 16)
       if (allocSize >= func.stack.total)
@@ -254,7 +253,7 @@ public class asmBuilder {
       visitIns(ins);
       ArrayList<irId> occurHere = new ArrayList<>();
       for (var id : occured)
-        if (id.refTime == 0 && id.type == IdType.Local) {
+        if (id.refTime == 0 && id.isLocal()) {
           curFunc.stack.recycle(asmId.idMap.get(id));
           occurHere.add(id);
         }
@@ -264,7 +263,7 @@ public class asmBuilder {
     visitIns(ir.terminal);
     ArrayList<irId> occurHere = new ArrayList<>();
     for (var id : occured)
-      if (id.refTime == 0 && id.type == IdType.Local) {
+      if (id.refTime == 0 && id.isLocal()) {
         curFunc.stack.recycle(asmId.idMap.get(id));
         occurHere.add(id);
       }
@@ -671,9 +670,23 @@ public class asmBuilder {
       curBlock.instructions.add(re);
       return;
     }
-    case Select:
-      // nan
-      break;
+    case Move: {
+      moveIns move = (moveIns)irins;
+      asmId res = getAsmId(move.result);
+      if (move.src.type == IdType.Constant) {
+        genConst(move.src);
+        genStore(res, 4);
+      } else if (move.src.type == IdType.Null) {
+        // li res,0
+        genConst(new irId(move.src.valueType, 0));
+        genStore(res, 4);
+      } else {
+        var src = getAsmId(move.src);
+        genLoad(src, 4);
+        genStore(res, 4);
+      }
+      return;
+    }
     case Store: { // store语句不会引入新虚拟寄存器
       storeIns store = (storeIns)irins;
       // storeIns的result保存要存储的事物类型
@@ -955,7 +968,7 @@ public class asmBuilder {
 
   public asmId regi(RegName r) { return regs.get(r.ordinal()); }
 
-  // generate a1 stored const: li a0, imm
+  // generate a0 stored const: li a0, imm
   public void genConst(irId ir) {
     assert ir.type == IdType.Constant;
     if (ir.constValue > (1 << 15)) {

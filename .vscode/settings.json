@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "log": "plaintext",
+    "*.v": "verilog",
+    "iostream": "cpp",
+    "ostream": "cpp"
+  }
+}

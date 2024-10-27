@@ -43,7 +43,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/codegen/t30.mx";
+      String file = "testcases/codegen/e0.mx";
       input = new FileInputStream(file);
     }
 

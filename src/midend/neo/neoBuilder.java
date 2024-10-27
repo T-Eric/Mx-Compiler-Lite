@@ -78,7 +78,6 @@ public class neoBuilder {
       lo.reg = t3;
       globalHiMap.put(id, hi);
       globalLoMap.put(id, lo);
-      // TODO 尝试 lo都用t3做跳板
     }
 
     // class definition (mainly the value positions)
@@ -127,6 +126,10 @@ public class neoBuilder {
   void prepareFunc(irFunc ir) {
     asmFunc func = new asmFunc(ir);
     world.functions.put(ir.name, func);
+    if (ir.blocks.size() == 1 && ir.retBlock.instructions.size() == 0 &&
+        ir.retBlock.terminal.result.valueType.type == IRType.Void)
+      func.delable = true;
+    func.builtIn = false;
 
     var rac = func.rac;
     var stk = func.stack;
@@ -262,7 +265,7 @@ public class neoBuilder {
         bnez.setBz(regi(condReg), go);
         curBlock.instructions.add(bnez);
 
-        var jmp = new asmIns(irins, OpType.j);
+        var jmp = new asmIns(OpType.j);
         var then = new asmId(AsmType.Label, br.falseLabel);
         then.setLabel(curFunc.ir.name);
         jmp.setJ(then);
@@ -272,6 +275,11 @@ public class neoBuilder {
     }
     case Call: {
       callIns call = (callIns)irins;
+      // 大胆尝试：如果要call的函数是void型且只有一条ret
+      // void语句，直接忽略这个call
+      var fn = world.functions.get(call.callName);
+      if(fn!=null&&fn.delable)return;
+
       // 如果是builtin就保存a0,a1,a2，否则保存函数的callerSaveRegsUsed
       HashSet<RegName> reserve = null;
       if (call.builtin) {
@@ -280,7 +288,7 @@ public class neoBuilder {
         reserve.add(RegName.a1);
         reserve.add(RegName.a2);
       } else {
-        reserve = world.functions.get(call.callName).rac.callerSaveRegsUsed;
+        reserve = fn.rac.callerSaveRegsUsed;
       }
       // save them
       HashMap<RegName, asmId> reserveId = new HashMap<>();
@@ -295,20 +303,27 @@ public class neoBuilder {
       int offset = -4; // ra跟saveRegs坐一桌了，不必为它考虑
       for (int i = 0; i < call.args.size(); ++i) {
         var irarg = call.args.get(i);
-        asmId arg = null;
-        if (curFunc.rac.idMap.containsKey(irarg))
-          arg = toAsmId(irarg);
-        else {
-          // 立即数，赋值到t0
-          genConstAt(irarg, t0);
-          arg = new asmId(t0);
-        }
         if (i < 8) {
           // a0~a7存值
-          moveReg(loadOp(arg, RegName.values()[ord + i]),
-                  RegName.values()[ord + i]);
-          ++ord;
+          RegName curReg = RegName.values()[ord + i];
+          if (irarg.type == IdType.Null)
+            moveReg(RegName.zero, curReg);
+          else if (irarg.type == IdType.Constant)
+            genConstAt(irarg, curReg);
+          else
+            loadOp(toAsmId(irarg), curReg);
         } else {
+          asmId arg = null;
+          if (irarg.type == IdType.Null) {
+            moveReg(RegName.zero, t0);
+            arg = new asmId(t0);
+          } else if (irarg.type == IdType.Constant) {
+            // 立即数，赋值到t0
+            genConstAt(irarg, t0);
+            arg = new asmId(t0);
+          } else {
+            arg = toAsmId(irarg);
+          }
           var address = new asmId(offset, sp);
           storeOp(address, loadOp(arg, t0));
           offset -= 4;
@@ -417,9 +432,7 @@ public class neoBuilder {
         genConstAt(rhs, t2);
         rs2 = regi(t2);
       } else if (rhs.type == IdType.Null) {
-        var li = new asmIns(null, OpType.li);
-        li.setLi(genImm(0), regi(t2));
-        curBlock.instructions.add(li);
+        moveReg(RegName.zero, t2);
         rs2 = regi(t2);
       } else
         rs2 = regi(loadOp(toAsmId(rhs), t2));
@@ -486,7 +499,18 @@ public class neoBuilder {
     case Move: {
       moveIns move = (moveIns)irins;
       var dest = toAsmId(move.result);
-      var src = toAsmId(move.src);
+      asmId src = null;
+
+      // 可能出现赋予常数或null的情形
+      if (move.src.type == IdType.Constant) {
+        genConstAt(move.src, t0);
+        src = regi(t0);
+      } else if (move.src.type == IdType.Null) {
+        moveReg(RegName.zero, t0);
+        src = regi(t0);
+      } else
+        src = toAsmId(move.src);
+
       if (dest.asmType == AsmType.Register && src.asmType == AsmType.Register)
         moveReg(src.reg, dest.reg);
       else
@@ -500,9 +524,7 @@ public class neoBuilder {
       var re = new asmIns(irins, OpType.ret);
       if (retType.type != IRType.Void) {
         if (ret.retValue.type == IdType.Constant) {
-          var li = new asmIns(OpType.li);
-          li.setLi(genImm(ret.retValue.constValue), regi(a0));
-          curBlock.instructions.add(li);
+          genConstAt(ret.retValue, a0);
         } else if (ret.retValue.type == IdType.Null) {
           var li = new asmIns(OpType.li);
           li.setLi(genImm(0), regi(a0));
@@ -516,28 +538,21 @@ public class neoBuilder {
     case Store: {
       storeIns store = (storeIns)irins;
       var result = toAsmId(store.storeAddr);
-      var resultReg = loadOp(result, t0);
-      //将地址加载进t0中
-      var midId = new asmId(0, resultReg);
 
+      //将地址加载进t0中
+      var midId = result.asmType == AsmType.Global
+                      ? result
+                      : new asmId(0, loadOp(result, t0));
+      RegName valueReg = null;
       if (store.storeValue.type == IdType.Constant) {
-        var li = new asmIns(OpType.li);
-        li.setLi(genImm(store.storeValue.constValue), regi(t1));
-        curBlock.instructions.add(li);
-        var sw = new asmIns(OpType.sw);
-        sw.setS(regi(t1), midId);
-        curBlock.instructions.add(sw);
+        genConstAt(store.storeValue, t1);
+        valueReg = t1;
       } else if (store.storeValue.type == IdType.Null) {
-        var sw = new asmIns(OpType.sw);
-        sw.setS(regi(RegName.zero), midId);
-        curBlock.instructions.add(sw);
+        valueReg = RegName.zero;
       } else {
-        var value = toAsmId(store.storeValue);
-        var valueReg = loadOp(value, t1);
-        var sw = new asmIns(irins, OpType.sw);
-        sw.setS(regi(valueReg), midId);
-        curBlock.instructions.add(sw);
+        valueReg = loadOp(toAsmId(store.storeValue), t1);
       }
+      storeOp(midId, valueReg);
       return;
     }
 
@@ -554,13 +569,19 @@ public class neoBuilder {
     if (id.asmType == AsmType.Register)
       return id.reg;
     if (id.asmType == AsmType.Address) {
-      var load = new asmIns(OpType.lw);
+      String loadInfo = id.ir == null
+                            ? ""
+                            : String.format("load id %s to reg %s",
+                                            id.ir.toString(), re.toString());
+      var load = new asmIns(new declareIns(loadInfo), OpType.lw);
       load.setL(id, regi(re));
       curBlock.instructions.add(load);
       return re;
     }
     if (id.asmType == AsmType.Global) {
-      var lui = new asmIns(OpType.lui);
+      String loadInfo = String.format("load global %s to reg %s",
+                                      id.ir.toString(), re.toString());
+      var lui = new asmIns(new declareIns(loadInfo), OpType.lui);
       lui.setLi(globalHiMap.get(id), regi(t3));
       curBlock.instructions.add(lui);
 
@@ -593,18 +614,25 @@ public class neoBuilder {
     if (id.asmType == AsmType.Register)
       return;
     if (id.asmType == AsmType.Address) {
-      var store = new asmIns(OpType.sw);
+      String storeInfo = id.ir == null
+                             ? ""
+                             : String.format("store reg %s to id %s",
+                                             re.toString(), id.ir.toString());
+      var store = new asmIns(new declareIns(storeInfo), OpType.sw);
       store.setS(regi(re), id);
       curBlock.instructions.add(store);
       return;
     }
     if (id.asmType == AsmType.Global) {
-      var lui = new asmIns(OpType.lui);
+      String storeInfo = String.format("store reg %s to global %s",
+                                       re.toString(), id.ir.toString());
+      var lui = new asmIns(new declareIns(storeInfo), OpType.lui);
       lui.setLi(globalHiMap.get(id), regi(t3));
       curBlock.instructions.add(lui);
       // 需要相信不会把“”的字符串常量进行更改
       var store = new asmIns(OpType.sw);
       store.setS(regi(re), globalLoMap.get(id));
+      curBlock.instructions.add(store);
       // 之前的pointer是为了一站式解决指针类变量
       // 现在只用在load和store的irIns处做翻译即可
       return;
@@ -624,7 +652,8 @@ public class neoBuilder {
   asmId genImm(int n) { return new asmId(n); }
 
   void genConstAt(irId ir, RegName re) {
-    assert ir.type == IdType.Constant;
+    if (ir.type == IdType.Null)
+      ir.constValue = 0;
     if (ir.constValue > (1 << 15)) {
       int high = ir.constValue >> 12, low = ir.constValue & ((1 << 12) - 1);
       if (low > 2047) {

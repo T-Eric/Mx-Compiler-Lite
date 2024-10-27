@@ -51,12 +51,17 @@ public class regAllocor {
 
     // 线性扫描这里开始
 
-    for(var arg:irfunc.args){
+    for (var arg : irfunc.args) {
       if (arg.argIndex < 8) {
-        assert arg.actLeft == 0;
-        //寄存器参数，刚好把a0~a7用去
-        idMap.put(arg, new asmId(arg, getEmptyReg()));
-        active.add(arg);
+        if (arg.actLeft != 0) {
+          var re = emptyRegs.poll();
+          idMap.put(arg, new asmId(arg, re));
+          emptyRegs.add(re);
+        } else {
+          idMap.put(arg, new asmId(arg, getEmptyReg()));
+          active.add(arg);
+        }
+        //寄存器参数刚好把a0~a7用去
       } else {
         //栈参数，与caller同步
         var asmid = new asmId(arg, -1);
@@ -65,7 +70,7 @@ public class regAllocor {
       }
     }
 
-    for (var id : irfunc.ids) 
+    for (var id : irfunc.ids)
       if (id.argIndex == -1)
         idlist.add(id);
 

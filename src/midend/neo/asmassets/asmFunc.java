@@ -20,6 +20,9 @@ public class asmFunc {
   public asmId label;
   public asmIns ret = null; // 暂存的ret语句
 
+  public boolean delable = false;
+  public boolean builtIn = true;
+
   public asmFunc(irFunc ir) { // irStatement = irFunc
     this.ir = ir;
     // irFuncMap.put(ir, this);

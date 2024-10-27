@@ -54,7 +54,7 @@ public class asmStack {
   }
 
   public void offSet() {
-    total = (total / 16) * 16;
+    total = (total / 16 + 1) * 16;
     for (var id : highStack) {
       id.offset = total - high - 4;
       high += 4; // 比如total=32，那么第一个值在28处

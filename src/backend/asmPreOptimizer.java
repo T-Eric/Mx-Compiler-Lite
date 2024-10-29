@@ -24,13 +24,13 @@ public class asmPreOptimizer {
   }
 
   public void activeAnalysis() {
-    if (func.retBlock == null)
-      func.retBlock = func.blocks.get(func.blocks.size() - 1);
+    mergeBlocks();
+    func.retBlock = func.blocks.get(func.blocks.size() - 1);
     for (var blk : func.blocks)
       genBlockDefUse(blk);
     genBlockActiveVars();
-    // for (var blk : func.blocks)
-    //   genInsActiveVars(blk);
+    for (var blk : func.blocks)
+      genInsActiveVars(blk);
     genBlockLinearOrd(func.blocks.get(0));
     genInsLinearOrd();
     genIdActiveInterval();
@@ -42,6 +42,35 @@ public class asmPreOptimizer {
   }
 
   //#region active
+
+  // merger
+  void mergeBlocks() {
+    boolean changed = false;
+    do {
+      changed = false;
+      for (int i = func.blocks.size() - 1; i >= 0; --i) {
+        var cur = func.blocks.get(i);
+        if (cur.preBlocks.size() != 1)
+          continue;
+        var pre = cur.preBlocks.get(0);
+        if (pre.sucBlocks.size() != 1)
+          continue;
+        // merge
+        changed = true;
+        for (var ins : cur.instructions)
+          pre.instructions.add(ins);
+        pre.terminal = cur.terminal;
+        pre.sucBlocks.remove(cur);
+        pre.sucBlocks.addAll(cur.sucBlocks);
+        for (var suc : cur.sucBlocks)
+          if (!pre.sucBlocks.contains(suc))
+            pre.sucBlocks.add(suc);
+
+        func.blocks.remove(cur);
+        break;
+      }
+    } while (changed);
+  }
 
   // active analysis and regAlloc
 
@@ -65,9 +94,9 @@ public class asmPreOptimizer {
     // start from retBlock, whose outActiveIds is empty
     Queue<irBlock> Q = new LinkedList<>();
     Q.add(func.retBlock);
+    func.retBlock.outActiveIds = new HashSet<>();
     while (!Q.isEmpty()) {
       var curBlock = Q.poll();
-
       calcInActiveIds(curBlock.outActiveIds, curBlock.useIds, curBlock.defIds,
                       curBlock.inActiveIds);
 
@@ -75,8 +104,7 @@ public class asmPreOptimizer {
         HashSet<irId> result = new HashSet<>();
         for (var suc : pre.sucBlocks)
           result.addAll(suc.inActiveIds);
-        if (!pre.outActiveIds.equals(result)) {
-          pre.outActiveIds.clear();
+        if (!result.equals(pre.outActiveIds)) {
           pre.outActiveIds = result;
           Q.add(pre);
         }
@@ -178,9 +206,9 @@ public class asmPreOptimizer {
     // 他们在函数体中没有第一个def，虽然能保证活跃区间正确，但是不方便处理
     // 他们使用预先分配好的寄存器或直接用栈空间（因为是别人传入的）
     // 在参数不超过5个时，这样是很优的操作了
-    int argIndex=-1;
-    for(var arg:func.args)
-      arg.argIndex=++argIndex;
+    int argIndex = -1;
+    for (var arg : func.args)
+      arg.argIndex = ++argIndex;
   }
 
   //#endregion

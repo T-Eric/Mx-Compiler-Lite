@@ -41,7 +41,6 @@ public class asmId {
 
   public asmId(AsmType asmType, irId ir) {
     if (ir != null) {
-      assert (!idMap.containsKey(ir));
       idMap.put(ir, this);
     }
     this.asmType = asmType;

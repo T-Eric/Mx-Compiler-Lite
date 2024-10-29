@@ -2,7 +2,7 @@ package midend.neo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType.IRType;
@@ -22,6 +22,7 @@ public class neoBuilder {
   asmBlock curBlock = null;
 
   ArrayList<asmId> regList = new ArrayList<>();
+  // HashMap<String, Integer> builtInUseCount = new HashMap<>();
 
   HashMap<asmId, asmId> globalHiMap = new HashMap<>();
   HashMap<asmId, asmId> globalLoMap = new HashMap<>();
@@ -33,9 +34,13 @@ public class neoBuilder {
   RegName t2 = RegName.t2;
   RegName t3 = RegName.t3;
 
-  RegName[] callerReserve = {RegName.a0, RegName.a1, RegName.a2, RegName.a3,
-                             RegName.a4, RegName.a5, RegName.a6, RegName.a7,
-                             RegName.t4, RegName.t5, RegName.t6};
+  RegName[] tempRegs = {RegName.t0, RegName.t1, RegName.t2, RegName.t3,
+                        RegName.t4, RegName.t5, RegName.t6};
+  RegName[] argRegs = {RegName.a0, RegName.a1, RegName.a2, RegName.a3,
+                       RegName.a4, RegName.a5, RegName.a6, RegName.a7};
+  RegName[] useRegs = {RegName.s0, RegName.s1, RegName.s2,  RegName.s3,
+                       RegName.s4, RegName.s5, RegName.s6,  RegName.s7,
+                       RegName.s8, RegName.s9, RegName.s10, RegName.s11};
 
   public neoBuilder(irWorld world) {
     for (int i = 0; i < 32; ++i)
@@ -45,6 +50,7 @@ public class neoBuilder {
   }
 
   public void visitWorld() {
+    // genBuiltInArgCount();
     // global variable definitions
     for (var define : ir.defines) {
       assert define.type == InsType.GlobalVar;
@@ -94,33 +100,28 @@ public class neoBuilder {
       world.classes.put(cls.name, ac);
     }
     // init finished
-
-    // args在visitFunc处理
-    // class constructors and methods
+    // collect all functions
+    LinkedList<irFunc> funcs = new LinkedList<>();
     for (var cls : ir.classes.values()) {
       if (cls.builtIn)
         continue;
 
-      prepareFunc(cls.constructor);
+      funcs.add(cls.constructor);
       for (var md : cls.methods.values())
-        prepareFunc(md);
+        funcs.add(md);
     }
     // global functions
     for (var fn : ir.functions.values()) {
       if (!fn.builtIn)
-        prepareFunc(fn);
+        funcs.add(fn);
     }
 
-    for (var cls : ir.classes.values()) {
-      if (cls.builtIn)
-        continue;
-      visitFunc(cls.constructor);
-      for (var md : cls.methods.values())
-        visitFunc(md);
-    }
-    for (var fn : ir.functions.values())
-      if (!fn.builtIn)
-        visitFunc(fn);
+    for (var fn : funcs)
+      prepareFunc(fn);
+    for (var fn : funcs)
+      prepareStack(fn);
+    for (var fn : funcs)
+      visitFunc(fn);
   }
 
   void prepareFunc(irFunc ir) {
@@ -130,18 +131,20 @@ public class neoBuilder {
         ir.retBlock.terminal.result.valueType.type == IRType.Void)
       func.delable = true;
     func.builtIn = false;
+    func.rac.allocReg();
+  }
 
+  void prepareStack(irFunc ir) {
+    var func = world.functions.get(ir.name);
     var rac = func.rac;
     var stk = func.stack;
-    rac.allocReg();
     for (var id : rac.stackVars)
       stk.pushLow(id);
     for (var arg : rac.spilledArgs)
       stk.pushHigh(arg);
     stk.pushSave(RegName.ra);
-    for (var re : rac.calleeSaveRegsUsed)
+    for (var re : rac.SaveRegsUsed)
       stk.pushSave(re);
-    stk.pushAllReserve(callerReserve); // 预留所有空间，
     stk.offSet();
   }
 
@@ -157,6 +160,17 @@ public class neoBuilder {
 
     asmBlock first = func.blocks.get(0),
              last = func.blocks.get(func.blocks.size() - 1);
+    // 将传入的参数移动到对应的s寄存器中
+    for (int i = 0; i < ir.args.size(); ++i) {
+      if (i > 7)
+        break;
+      var arg = toAsmId(ir.args.get(i));
+      assert arg.asmType == AsmType.Register;
+      var move = new asmIns(OpType.mv);
+      move.setMv(regi(argRegs[i]), regi(arg.reg));
+      first.instructions.addFirst(move);
+    }
+
     // 分配sp，存储ra和其他callee save寄存器值
     for (var cs : stk.saveMap.keySet()) {
       asmId saveId = new asmId(stk.savePos(cs), sp);
@@ -196,6 +210,7 @@ public class neoBuilder {
 
   void visitIns(irIns irins) {
     switch (irins.type) {
+      //#region alloca
     case Alloca: {
       // 已经在栈上分配了指针及其空间，为指针赋值
       var id = toAsmId(irins.result);
@@ -208,6 +223,7 @@ public class neoBuilder {
       storeOp(id, t0);
       return;
     }
+    //#region bin
     case Binary: {
       binaryIns binary = (binaryIns)irins;
       var result = toAsmId(binary.result);
@@ -232,6 +248,7 @@ public class neoBuilder {
       storeOp(result, resultReg);
       return;
     }
+    //#region cast
     case Bitcast: {
       bitcastIns cast = (bitcastIns)irins;
       var dest = toAsmId(cast.result);
@@ -242,6 +259,7 @@ public class neoBuilder {
         storeOp(dest, loadOp(src, getDest(dest, t0)));
       return;
     }
+    //#region br
     case Br: {
       brIns br = (brIns)irins;
       if (br.cond == null) {
@@ -273,45 +291,66 @@ public class neoBuilder {
       }
       return;
     }
+    //#region call
     case Call: {
       callIns call = (callIns)irins;
       // 大胆尝试：如果要call的函数是void型且只有一条ret
       // void语句，直接忽略这个call
       var fn = world.functions.get(call.callName);
-      if(fn!=null&&fn.delable)return;
+      if (fn != null && fn.delable)
+        return;
 
-      // 如果是builtin就保存a0,a1,a2，否则保存函数的callerSaveRegsUsed
-      HashSet<RegName> reserve = null;
-      if (call.builtin) {
-        reserve = new HashSet<>();
-        reserve.add(a0);
-        reserve.add(RegName.a1);
-        reserve.add(RegName.a2);
-      } else {
-        reserve = fn.rac.callerSaveRegsUsed;
-      }
-      // save them
-      HashMap<RegName, asmId> reserveId = new HashMap<>();
-      for (var reg : reserve) {
-        var resId = new asmId(curFunc.stack.reservePos(reg), sp);
-        reserveId.put(reg, resId);
-        storeOp(resId, reg);
-      }
+      boolean isVoid = call.result.valueType.type == IRType.Void;
+      // 如果是builtin，保存对应数量
+      // 否则保存函数的callerSaveRegsUsed与inActiveIds持有寄存器的交
+      // HashSet<RegName> reserve = null;
+      // if (call.builtin) {
+      //   int count = builtInUseCount.get(call.callName);
+      //   reserve = new HashSet<>();
+      //   if (call.result.valueType.type != IRType.Void)
+      //     reserve.add(a0); // 有返回值则必须考虑存a0
+      //   for (int i = 0; i < count; ++i) {
+      //     reserve.add(RegName.values()[a0.ordinal() + i]);
+      //   }
+      // } else {
+      //   reserve = new HashSet<>();
+      //   for (var aid : call.inActiveIds) {
+      //     var id = toAsmId(aid);
+      //     if (id.asmType == AsmType.Register)
+      //       reserve.add(id.reg);
+      //   }
+      //   // TODO 需要考察与allocaIns的适配性
+      //   reserve.retainAll(fn.rac.callerSaveRegsUsed);
+      //   // reserve=fn.rac.callerSaveRegsUsed;
+      // }
+      // // 保存之，忽略结果寄存器
+      // HashMap<RegName, asmId> reserveId = new HashMap<>();
+      // for (var reg : reserve) {
+      //   if (resultAT && resultATreg == reg)
+      //     continue;
+      //   var resId = new asmId(curFunc.stack.reservePos(reg), sp);
+      //   reserveId.put(reg, resId);
+      //   storeOp(resId, reg);
+      // }
 
       // load values to a-regs and that stack
-      int ord = RegName.a0.ordinal();
       int offset = -4; // ra跟saveRegs坐一桌了，不必为它考虑
       for (int i = 0; i < call.args.size(); ++i) {
         var irarg = call.args.get(i);
         if (i < 8) {
           // a0~a7存值
-          RegName curReg = RegName.values()[ord + i];
-          if (irarg.type == IdType.Null)
-            moveReg(RegName.zero, curReg);
-          else if (irarg.type == IdType.Constant)
-            genConstAt(irarg, curReg);
-          else
-            loadOp(toAsmId(irarg), curReg);
+          RegName dest = argRegs[i];
+          if (irarg.type == IdType.Null) {
+            moveReg(RegName.zero, dest);
+          } else if (irarg.type == IdType.Constant) {
+            genConstAt(irarg, dest);
+          } else {
+            var arg = toAsmId(irarg);
+            if (arg.asmType == AsmType.Register)
+              moveReg(arg.reg, dest);
+            else
+              loadOp(arg, dest);
+          }
         } else {
           asmId arg = null;
           if (irarg.type == IdType.Null) {
@@ -337,20 +376,18 @@ public class neoBuilder {
       calling.setCall(label);
       curBlock.instructions.add(calling);
 
-      // 保存返回值
-      if (call.result.valueType.type != IRType.Void) {
+      if (!isVoid) {
         var result = toAsmId(call.result);
+        // 保存值
         if (result.asmType == AsmType.Register)
           moveReg(a0, result.reg);
         else
           storeOp(result, a0);
       }
 
-      // 复原
-      for (var reg : reserve)
-        loadOp(reserveId.get(reg), reg);
       return;
     }
+    //#region gep
     case Getelementptr: {
       getelementptrIns gep = (getelementptrIns)irins;
       if (gep.indices.size() == 1) {
@@ -415,6 +452,7 @@ public class neoBuilder {
       }
       return;
     }
+    //#region icmp
     case Icmp: {
       icmpIns icmp = (icmpIns)irins;
       var result = toAsmId(icmp.result);
@@ -482,18 +520,24 @@ public class neoBuilder {
       storeOp(result, resultReg);
       return;
     }
+    //#region load
     case Load: {
       loadIns load = (loadIns)irins;
       var result = toAsmId(load.result);
       var address = toAsmId(load.loadAddr);
-      var addReg = loadOp(address, t0);
-      var resultReg = getDest(result, t1);
-
-      var midId = new asmId(0, addReg);
-      var lw = new asmIns(irins, OpType.lw);
-      lw.setL(midId, regi(resultReg));
-      curBlock.instructions.add(lw);
-      storeOp(result, resultReg);
+      if (address.asmType == AsmType.Global) {
+        var resultReg = getDest(result, t1);
+        loadOp(address, resultReg);
+        storeOp(result, resultReg);
+      } else {
+        var addReg = loadOp(address, t0);
+        var resultReg = getDest(result, t1);
+        var midId = new asmId(0, addReg);
+        var lw = new asmIns(irins, OpType.lw);
+        lw.setL(midId, regi(resultReg));
+        curBlock.instructions.add(lw);
+        storeOp(result, resultReg);
+      }
       return;
     }
     case Move: {
@@ -517,6 +561,7 @@ public class neoBuilder {
         storeOp(dest, loadOp(src, getDest(dest, t0)));
       return;
     }
+    //#region ret
     case Ret: {
       retIns ret = (retIns)irins;
       //暂存ret，后面要收尾时插入
@@ -535,6 +580,7 @@ public class neoBuilder {
       curFunc.ret = re;
       return;
     }
+    //#region store
     case Store: {
       storeIns store = (storeIns)irins;
       var result = toAsmId(store.storeAddr);
@@ -654,6 +700,10 @@ public class neoBuilder {
   void genConstAt(irId ir, RegName re) {
     if (ir.type == IdType.Null)
       ir.constValue = 0;
+    if (ir.constValue == 0) {
+      moveReg(RegName.zero, re);
+      return;
+    }
     if (ir.constValue > (1 << 15)) {
       int high = ir.constValue >> 12, low = ir.constValue & ((1 << 12) - 1);
       if (low > 2047) {
@@ -678,6 +728,58 @@ public class neoBuilder {
       return curFunc.rac.idMap.get(ir);
     return asmId.idMap.get(ir);
   }
+
+  boolean isCallerSaved(RegName re) {
+    int reg = re.ordinal();
+    return reg >= 10 && reg <= 17 || reg >= 29 && reg <= 31;
+  }
+
+  // void genBuiltInArgCount() {
+  //   builtInUseCount = new HashMap<>() {
+  //     {
+  //       // put("malloc", 7);// 发现a系列全都被污染成0xdeadbeef
+  //       // put("_new_array", 3);
+  //       // put("_print", 2);
+  //       // put("_println", 2);
+  //       // put("_printInt", 2);
+  //       // put("_printlnInt", 2);
+  //       // put("_getString", 2);
+  //       // put("_getInt", 2);
+  //       // put("_toString", 3);
+  //       // put("_string_add", 2);
+  //       // put("_string_eq", 2);
+  //       // put("_string_ne", 2);
+  //       // put("_string_le", 2);
+  //       // put("_string_leq", 2);
+  //       // put("_string_ge", 2);
+  //       // put("_string_geq", 2);
+  //       // put("_string_substring", 3);
+  //       // put("_string_parseInt", 3);
+  //       // put("_string_ord", 2);
+  //       // put("_boolToString", 3);
+  //       put("malloc", 7); // 发现a系列全都被污染成0xdeadbeef
+  //       put("_new_array", 7);
+  //       put("_print", 7);
+  //       put("_println", 7);
+  //       put("_printInt", 7);
+  //       put("_printlnInt", 7);
+  //       put("_getString", 7);
+  //       put("_getInt", 7);
+  //       put("_toString", 7);
+  //       put("_string_add", 7);
+  //       put("_string_eq", 7);
+  //       put("_string_ne", 7);
+  //       put("_string_le", 7);
+  //       put("_string_leq", 7);
+  //       put("_string_ge", 7);
+  //       put("_string_geq", 7);
+  //       put("_string_substring", 7);
+  //       put("_string_parseInt", 7);
+  //       put("_string_ord", 7);
+  //       put("_boolToString", 7);
+  //     }
+  //   };
+  // }
 
   //#endregion
 }

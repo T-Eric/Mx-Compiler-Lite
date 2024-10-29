@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.TreeSet;
 import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irType.IRType;
 import midend.llvm_ir.irassets.statements.irFunc;
 import midend.neo.asmassets.asmId;
 import midend.neo.asmassets.asmId.AsmType;
@@ -22,13 +21,12 @@ public class regAllocor {
   public ArrayList<asmId> spilledArgs = new ArrayList<>();
 
   public LinkedList<RegName> emptyRegs = new LinkedList<>();
-  public HashSet<RegName> callerSaveRegsUsed = new HashSet<>();
-  public HashSet<RegName> calleeSaveRegsUsed = new HashSet<>();
+  public HashSet<RegName> SaveRegsUsed = new HashSet<>();
 
   public TreeSet<irId> active = new TreeSet<>(new CompRight());
   public TreeSet<irId> idlist = new TreeSet<>(new CompLeft());
 
-  public int r = 22;
+  public int r = 12;
 
   public regAllocor(irFunc irfunc) {
     this.irfunc = irfunc;
@@ -36,9 +34,6 @@ public class regAllocor {
 
     for (var re : availRegs)
       emptyRegs.add(re);
-    // 如果有返回值，直接把a0算上
-    if (irfunc.retBlock.terminal.result.valueType.type != IRType.Void)
-      callerSaveRegsUsed.add(RegName.a0);
   }
 
   public void allocReg() {
@@ -61,7 +56,7 @@ public class regAllocor {
           idMap.put(arg, new asmId(arg, getEmptyReg()));
           active.add(arg);
         }
-        //寄存器参数刚好把a0~a7用去
+        //寄存器参数刚好把s0~s7用去
       } else {
         //栈参数，与caller同步
         var asmid = new asmId(arg, -1);
@@ -71,7 +66,7 @@ public class regAllocor {
     }
 
     for (var id : irfunc.ids)
-      if (id.argIndex == -1)
+      if (id.argIndex == -1 && !irfunc.remainAllocas.containsKey(id))
         idlist.add(id);
 
     for (var id : idlist) {
@@ -86,16 +81,14 @@ public class regAllocor {
   }
 
   void expireOld(irId id) {
-    Iterator<irId> iterator =
-        active.iterator(); // 替换 YourType 为 active 中元素的实际类型
+    Iterator<irId> iterator = active.iterator();
     while (iterator.hasNext()) {
       var jd = iterator.next();
-      if (jd.actRight >= id.actLeft) {
-        return; // 一旦遇到满足条件的元素，停止遍历
-      }
-      iterator.remove(); // 使用迭代器的 remove 方法安全删除元素
+      if (jd.actRight >= id.actLeft)
+        return;
+      iterator.remove();
       var expired = idMap.get(jd);
-      emptyRegs.add(expired.reg);
+      emptyRegs.addFirst(expired.reg);
     }
   }
 
@@ -103,10 +96,10 @@ public class regAllocor {
     var spill = active.last();
     if (spill.actRight > id.actRight) {
       // 此时 id 还没有自己的asmId
-      var asmid = new asmId(id, idMap.get(spill).reg);
+      var asmspill = idMap.get(spill);
+      var asmid = new asmId(id, asmspill.reg);
       idMap.put(id, asmid);
 
-      var asmspill = idMap.get(spill);
       asmspill.asmType = AsmType.Address;
       asmspill.reg = RegName.sp;
       stackVars.add(asmspill);
@@ -122,31 +115,37 @@ public class regAllocor {
 
   RegName getEmptyReg() {
     var re = emptyRegs.poll();
-    var ord = re.ordinal();
-    if (ord >= 10 && ord <= 17 || ord >= 29 && ord <= 31)
-      callerSaveRegsUsed.add(re);
-    else
-      calleeSaveRegsUsed.add(re);
+    SaveRegsUsed.add(re);
     return re;
   }
 
-  RegName[] availRegs = {
-      RegName.a0, RegName.a1, RegName.a2,  RegName.a3, RegName.a4, RegName.a5,
-      RegName.a6, RegName.a7, RegName.t4,  RegName.t5, RegName.t6, RegName.s1,
-      RegName.s2, RegName.s3, RegName.s4,  RegName.s5, RegName.s6, RegName.s7,
-      RegName.s8, RegName.s9, RegName.s10, RegName.s11};
+  RegName[] availRegs = {RegName.s0, RegName.s1, RegName.s2,  RegName.s3,
+                         RegName.s4, RegName.s5, RegName.s6,  RegName.s7,
+                         RegName.s8, RegName.s9, RegName.s10, RegName.s11};
 }
 
 class CompLeft implements Comparator<irId> {
   @Override
   public int compare(irId o1, irId o2) {
-    return Integer.compare(o1.actLeft, o2.actLeft);
+    int first = Integer.compare(o1.actLeft, o2.actLeft);
+    if (first != 0)
+      return first;
+    else if (o1.equals(o2))
+      return 0;
+    else
+      return o1.toString().compareTo(o2.toString());
   }
 }
 
 class CompRight implements Comparator<irId> {
   @Override
   public int compare(irId o1, irId o2) {
-    return Integer.compare(o1.actRight, o2.actRight);
+    int first = Integer.compare(o1.actRight, o2.actRight);
+    if (first != 0)
+      return first;
+    else if (o1.equals(o2))
+      return 0;
+    else
+      return o1.toString().compareTo(o2.toString());
   }
 }

@@ -35,6 +35,8 @@ public class getelementptrIns extends irIns {
     if (useIds != null)
       return useIds;
     useIds = new HashSet<irId>();
+    if (objectPtr.type == IdType.Local)
+      useIds.add(objectPtr);
     for (var index : indices)
       if (index.type == IdType.Local)
         useIds.add(index);

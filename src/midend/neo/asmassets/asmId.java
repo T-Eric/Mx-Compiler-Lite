@@ -217,7 +217,7 @@ public class asmId {
     t0,
     t1,
     t2, // 5-7
-    fp,
+    s0,
     s1, // 8,9
     a0,
     a1,

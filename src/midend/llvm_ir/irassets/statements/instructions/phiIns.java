@@ -25,7 +25,7 @@ public class phiIns extends irIns {
 
   @Override
   public String toString() {
-    var insType = result.valueType.getDeref();
+    var insType = result.valueType;
     var argStr = new StringBuilder();
     args.forEach(
         (arga,

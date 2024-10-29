@@ -1420,8 +1420,8 @@ public class irBuilder implements ASTVisitor {
     genDeclare(
         String.format("declare i32 @%s()", builtinFuncNames.get("getInt")));
 
-    genDeclare(
-        String.format("declare i32 @%s()", builtinFuncNames.get("toString")));
+    genDeclare(String.format("declare i8* @%s(i32)",
+                             builtinFuncNames.get("toString")));
 
     genDeclare(String.format("declare i8* @%s(i8*, i8*)",
                              builtinFuncNames.get("_string_add")));

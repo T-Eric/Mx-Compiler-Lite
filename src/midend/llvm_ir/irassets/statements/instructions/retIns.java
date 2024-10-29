@@ -3,6 +3,7 @@ package midend.llvm_ir.irassets.statements.instructions;
 import java.util.Collections;
 import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
+import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.irType.IRType;
 import midend.llvm_ir.irassets.statements.irIns;
@@ -33,7 +34,8 @@ public class retIns extends irIns {
   public HashSet<irId> useValue() {
     if (useIds != null)
       return useIds;
-    if (result.valueType.type == IRType.Void)
+    if (result.valueType.type == IRType.Void ||
+        retValue.type == IdType.Constant)
       useIds = new HashSet<irId>();
     else
       useIds = new HashSet<irId>(Collections.singleton(retValue));

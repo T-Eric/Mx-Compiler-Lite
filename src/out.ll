@@ -1,58 +1,56 @@
-class.A.A
-------
-
 _init
 ------
 
-global.fun
-%8: 6 6
-%23: 11 12
-%0: 0 9
-%19.0: 12 17
-%18: 9 10
-%15: 8 14
-%27: 14 15
-%8.0: 2 6
-%1: 0 14
-%19: 17 19
-%14: 7 8
-%7: 0 1
-------
-
 main
-%28: 28 44
-%41: 37 41
-%3: 9 23
-%44: 39 40
-%16: 18 19
-%48: 43 46
-%32: 30 31
-%5: 1 2
-%10: 11 12
-%14: 15 16
-%26: 26 28
-%21: 23 25
-%33: 31 35
-%23: 25 45
-%2.0: 4 47
-%2: 10 26
-%11: 12 13
-%30: 29 36
-%3.0: 5 47
-%43: 38 39
-%35: 32 33
-%17: 20 21
-%6: 2 3
-%15: 17 18
-%27: 27 28
-%22: 24 25
-%7.0: 6 47
-%36: 33 34
-%38: 34 35
-%45: 40 41
-%39: 35 36
-%7: 8 43
-%13: 14 15
+%24: 20 22
+%14.phi.0: 26 26
+%3.phi.1: 28 28
+%53: 48 52
+%58: 52 68
+%3.phi.2: 41 53
+%14.tmp.1.1: 38 72
+%74: 57 58
+%13: 7 72
+%3.phi.0: 10 20
+%5.tmp.0.0: 13 67
+%14.tmp.0.0: 16 67
+%47: 46 52
+%19: 12 18
+%67: 68 69
+%50: 47 50
+%57: 51 71
+%70: 56 64
+%12: 6 7
+%3.tmp.2.2: 37 72
+%5.tmp.1.1: 36 72
+%26: 21 22
+%5.phi.1: 42 46
+%10: 3 4
+%6.tmp.0.0: 17 67
+%9: 2 3
+%14.phi.1: 40 48
+%43: 43 44
+%3.tmp.1.1: 14 67
+%80: 61 66
+%18: 11 12
+%61: 54 55
+%32: 30 38
+%3.tmp.0.0: 8 24
+%75: 58 59
+%23: 19 23
+%6.phi.0: 25 72
+%54: 49 50
+%44: 44 45
+%60: 53 70
+%46: 45 46
+%82: 33 34
+%5.phi.0: 29 29
+%34: 31 32
+%4.tmp.0.0: 15 67
+%8: 1 2
+%11: 4 6
+%4.phi.0: 27 72
+%76: 59 60
 ------
 
 declare i8* @malloc(i32)
@@ -63,7 +61,7 @@ declare void @_printInt(i32)
 declare void @_printlnInt(i32)
 declare i8* @_getString()
 declare i32 @_getInt()
-declare i32 @_toString()
+declare i8* @_toString(i32)
 declare i8* @_string_add(i8*, i8*)
 declare i1 @_string_eq(i8*, i8*)
 declare i1 @_string_ne(i8*, i8*)
@@ -76,120 +74,105 @@ declare i32 @_string_parseInt(i8*)
 declare i32 @_string_ord(i8*, i32)
 declare i8* @_boolToString(i1)
 
-@global.n = global i32 0
-@global.m = global i32 0
-@.strconst.0 = private unnamed_addr constant [3 x i8] c"i=\00"
-
-%class.A = type { i32, i1 }
-
-define void @class.A.A(%class.A* %0) {
-0  ret void
-}
+@.strconst.0 = private unnamed_addr constant [2 x i8] c"\0A\00"
 
 
 
 
 define void @_init() {
-0  store i32 114, i32* @global.n
-1  store i32 514, i32* @global.m
-2  ret void
-}
-
-define i32 @global.fun(i32 %0, i32 %1) {
-0  %7 = icmp sgt i32 10, 20
-1  br i1 %7, label %9, label %10
-
-9:
-2  %8.0 <- 10
-3  br label %11
-
-10:
-4  %8.0 <- 20
-5  br label %11
-
-11:
-6  %8 <- %8.0
-7  %14 = add i32 100, 200
-8  %15 = add i32 %14, 300
-9  %18 = icmp sgt i32 %0, %1
-10  br i1 %18, label %20, label %24
-
-20:
-11  %23 = sub i32 %15, %1
-12  %19.0 <- %23
-13  br label %28
-
-24:
-14  %27 = add i32 %15, %1
-15  %19.0 <- %27
-16  br label %28
-
-28:
-17  %19 <- %19.0
-18  br label %30
-
-30:
-19  ret i32 %19
+0  ret void
 }
 
 define i32 @main() {
 0  call void @_init()
-1  %5 = call i8* @malloc(i32 8)
-2  %6 = bitcast i8* %5 to %class.A*
-3  call void @class.A.A(%class.A* %6)
-4  %2.0 <- 0
-5  %3.0 <- 0
-6  %7.0 <- 0
-7  br label %8
+1  %8 = mul i32 4, 2801
+2  %9 = add i32 %8, 4
+3  %10 = call i8* @malloc(i32 %9)
+4  %11 = bitcast i8* %10 to i32*
+5  store i32 2801, i32* %11
+6  %12 = getelementptr i32, i32* %11, i32 1
+7  %13 = bitcast i32* %12 to i32*
+8  %3.tmp.0.0 <- 0
+9  br label %15
 
-8:
-8  %7 <- %7.0
-9  %3 <- %3.0
-10  %2 <- %2.0
-11  %10 = load i32, i32* @global.n
-12  %11 = icmp slt i32* %7, %10
-13  br i1 %11, label %12, label %50
+15:
+10  %3.phi.0 <- %3.tmp.0.0
+11  %18 = sub i32 %3.phi.0, 2800
+12  %19 = icmp ne i32 %18, 0
+13  %5.tmp.0.0 <- 0
+14  %3.tmp.1.1 <- %3.phi.0
+15  %4.tmp.0.0 <- 2800
+16  %14.tmp.0.0 <- 0
+17  %6.tmp.0.0 <- 0
+18  br i1 %19, label %20, label %30
 
-12:
-14  %13 = load i32, i32* @global.n
-15  %14 = add i32 %13, 1
-16  store i32 %14, i32* @global.n
-17  %15 = load i32, i32* @global.m
-18  %16 = sub i32 %15, 1
-19  store i32 %16, i32* @global.m
-20  %17 = getelementptr [3 x i8], [3 x i8]* @.strconst.0, i32 0, i32 0
-21  call void @_println(i8* %17)
-22  call void @_printlnInt(i32* %7)
-23  %21 = add i32 %3, %2
-24  %22 = load i32, i32* @global.n
-25  %23 = add i32 %21, %22
-26  %26 = add i32 %2, %7
-27  %27 = load i32, i32* @global.m
-28  %28 = add i32 %26, %27
-29  %30 = getelementptr %class.A, %class.A* %6, i32 0, i32 0
-30  %32 = getelementptr %class.A, %class.A* %6, i32 0, i32 0
-31  %33 = load i32, i32* %32
-32  %35 = getelementptr %class.A, %class.A* %6, i32 0, i32 0
-33  %36 = load i32, i32* %35
-34  %38 = call i32 @global.fun(i32 %36, i32* %7)
-35  %39 = add i32 %33, %38
-36  store i32 %39, i32* %30
-37  %41 = getelementptr %class.A, %class.A* %6, i32 0, i32 1
-38  %43 = getelementptr %class.A, %class.A* %6, i32 0, i32 1
-39  %44 = load i1, i1* %43
-40  %45 = xor i1 %44, 1
-41  store i1 %45, i1* %41
-42  br label %46
+20:
+19  %23 = add i32 %3.phi.0, 1
+20  %24 = getelementptr i32, i32* %13, i32 %3.phi.0
+21  %26 = sdiv i32 10000, 5
+22  store i32 %26, i32* %24
+23  %3.tmp.0.0 <- %23
+24  br label %15
 
-46:
-43  %48 = add i32 %7, 2
-44  %2.0 <- %28
-45  %3.0 <- %23
-46  %7.0 <- %48
-47  br label %8
+30:
+25  %6.phi.0 <- %6.tmp.0.0
+26  %14.phi.0 <- %14.tmp.0.0
+27  %4.phi.0 <- %4.tmp.0.0
+28  %3.phi.1 <- %3.tmp.1.1
+29  %5.phi.0 <- %5.tmp.0.0
+30  %32 = mul i32 %4.phi.0, 2
+31  %34 = icmp eq i32 %32, 0
+32  br i1 %34, label %81, label %36
 
-50:
-48  ret i32 0
+36:
+36  %5.tmp.1.1 <- 0
+37  %3.tmp.2.2 <- %4.phi.0
+38  %14.tmp.1.1 <- %32
+39  br label %39
+
+39:
+40  %14.phi.1 <- %14.tmp.1.1
+41  %3.phi.2 <- %3.tmp.2.2
+42  %5.phi.1 <- %5.tmp.1.1
+43  %43 = getelementptr i32, i32* %13, i32 %3.phi.2
+44  %44 = load i32, i32* %43
+45  %46 = mul i32 %44, 10000
+46  %47 = add i32 %5.phi.1, %46
+47  %50 = getelementptr i32, i32* %13, i32 %3.phi.2
+48  %53 = sub i32 %14.phi.1, 1
+49  %54 = srem i32 %47, %53
+50  store i32 %54, i32* %50
+51  %57 = sub i32 %53, 1
+52  %58 = sdiv i32 %47, %53
+53  %60 = sub i32 %3.phi.2, 1
+54  %61 = icmp eq i32 %60, 0
+55  br i1 %61, label %68, label %64
+
+64:
+68  %67 = mul i32 %58, %60
+69  %5.tmp.1.1 <- %67
+70  %3.tmp.2.2 <- %60
+71  %14.tmp.1.1 <- %57
+72  br label %39
+
+68:
+56  %70 = sub i32 %4.phi.0, 14
+57  %74 = sdiv i32 %58, 10000
+58  %75 = add i32 %6.phi.0, %74
+59  %76 = call i8* @_toString(i32 %75)
+60  call void @_print(i8* %76)
+61  %80 = srem i32 %58, 10000
+62  %5.tmp.0.0 <- %58
+63  %3.tmp.1.1 <- %60
+64  %4.tmp.0.0 <- %70
+65  %14.tmp.0.0 <- %57
+66  %6.tmp.0.0 <- %80
+67  br label %30
+
+81:
+33  %82 = getelementptr [2 x i8], [2 x i8]* @.strconst.0, i32 0, i32 0
+34  call void @_print(i8* %82)
+35  ret i32 0
 }
 
 

@@ -21,6 +21,7 @@ public class irOptimizer {
   HashMap<irId, irId> curId = new HashMap<>();
   HashMap<irId, irId> lastDef = new HashMap<>();
   HashSet<irId> allocas = new HashSet<>();
+  boolean removePhi = true;
 
   public irOptimizer(irFunc func) { this.func = func; }
 
@@ -31,7 +32,7 @@ public class irOptimizer {
     calcPreSuc();
     // mergeSinglePreBlocks();
     genDom();
-    genPhiThenMove();
+    genPhiThenMove(removePhi);
   }
 
   //#region SSA
@@ -102,7 +103,6 @@ public class irOptimizer {
   }
 
   void genDom() {
-    // TODO 到时候编译超时了这就是第一个优化点
     for (var bk : func.blocks)
       for (var b : func.blocks)
         bk.dom.add(b);
@@ -169,7 +169,7 @@ public class irOptimizer {
     }
   }
 
-  public void genPhiThenMove() {
+  public void genPhiThenMove(boolean rem) {
     // collect all allocas
 
     for (var blk : func.blocks)
@@ -180,8 +180,10 @@ public class irOptimizer {
           else
             func.remainAllocas.put(ins.result, (allocaIns)ins);
         }
+    for (var alc : allocas)
+      --alc.valueType.dimension;
+    // 从指针变为更低一级
 
-    // TODO 对于多元的 alloca 我们无能为力，让他保留吧
     for (var blk : func.blocks)
       for (var ins : blk.instructions)
         if (ins.type == irIns.InsType.Store) {
@@ -195,6 +197,9 @@ public class irOptimizer {
     // rename and value the phis
     rename(func.blocks.get(0));
 
+    if (!rem)
+      return;
+
     // eliminate phis
     for (var block : func.blocks) {
       for (var phi : block.phis.values()) {
@@ -207,7 +212,7 @@ public class irOptimizer {
         // 否则，在前一个块中插入tmp赋值，在这个块头部插入tmp到phi的赋值
         var tmp =
             phi.result
-                .copy(); // 大抵是不会重复的，假如重复了就用当前块的label去copy就行了
+                .copyTemp(); // 大抵是不会重复的，假如重复了就用当前块的label去copy就行了
         for (var pre : phi.args.keySet())
           pre.labelBlock.instructions.add(new moveIns(tmp, phi.args.get(pre)));
         block.instructions.addFirst(new moveIns(phi.result, tmp));
@@ -228,10 +233,10 @@ public class irOptimizer {
     if (block.phis.containsKey(id))
       return;
     var ins = new phiIns();
-    ins.result = id; // 此时还不必重命名
+    ins.result = id.copyPhi();
 
     for (var pre : block.preBlocks)
-      ins.args.put(pre.label, ins.result.valueType.getDeref().dimension > 0
+      ins.args.put(pre.label, ins.result.valueType.dimension > 0
                                   ? new irId(IdType.Null)
                                   : new irId(ins.result.valueType, 0));
 

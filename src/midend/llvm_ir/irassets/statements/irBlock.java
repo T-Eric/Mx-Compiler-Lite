@@ -20,7 +20,7 @@ public class irBlock extends irStatement {
 
   // optimize: Active Analysis
   public HashSet<irId> inActiveIds = new HashSet<>();
-  public HashSet<irId> outActiveIds = new HashSet<>();
+  public HashSet<irId> outActiveIds = null;
   public HashSet<irId> useIds = new HashSet<>();
   public HashSet<irId> defIds = new HashSet<>();
 

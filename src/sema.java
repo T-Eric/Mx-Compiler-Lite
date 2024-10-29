@@ -13,7 +13,6 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-// import midend.asm.asmBuilder;
 import midend.llvm_ir.irBuilder;
 import midend.neo.neoBuilder;
 import org.antlr.v4.gui.TreeViewer;
@@ -28,7 +27,7 @@ import utility.scope.globalScope;
 public class sema {
   public static void main(String[] args) throws Exception {
     // run monitors
-    boolean run_by_bash = false;
+    boolean run_by_bash = true;
     boolean watchTree = false;
     boolean outToFile = !run_by_bash;
     boolean debug_ir = false;
@@ -43,7 +42,7 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/codegen/e0.mx";
+      String file = "testcases/optim/pi.mx";
       input = new FileInputStream(file);
     }
 
@@ -83,19 +82,19 @@ public class sema {
       // Optimize
       for (var cls : ir.world.classes.values()) {
         if (!cls.builtIn) {
-          var opter = new irOptimizer(cls.constructor);
-          var preparer = new asmPreOptimizer(cls.constructor);
-          opter.ssa();
-          preparer.activeAnalysis();
+          new irOptimizer(cls.constructor).ssa();
+          new asmPreOptimizer(cls.constructor).activeAnalysis();
+          for (var md : cls.methods.values()) {
+            new irOptimizer(md).ssa();
+            new asmPreOptimizer(md).activeAnalysis();
+          }
         }
       }
 
       for (var func : ir.world.functions.values()) {
         if (!func.builtIn) {
-          var opter = new irOptimizer(func);
-          var preparer = new asmPreOptimizer(func);
-          opter.ssa();
-          preparer.activeAnalysis();
+          new irOptimizer(func).ssa();
+          new asmPreOptimizer(func).activeAnalysis();
         }
       }
 
@@ -105,9 +104,10 @@ public class sema {
 
       if (!debug_ir) {
         if (outToFile) {
-          PrintStream ps = new PrintStream(
-              new BufferedOutputStream(new FileOutputStream("src/out.s")),
-              true);
+          PrintStream ps =
+              new PrintStream(new BufferedOutputStream(
+                                  new FileOutputStream("testspace/test.s")),
+                              true);
           System.setOut(ps);
         }
 
@@ -128,6 +128,7 @@ public class sema {
             e.printStackTrace();
           }
 
+        // System.out.println(asm.world.toString());
         System.out.println(neo.world.toString());
       }
     } catch (error e) {

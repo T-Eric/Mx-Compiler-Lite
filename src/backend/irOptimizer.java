@@ -29,7 +29,6 @@ public class irOptimizer {
   public void ssa() {
     cleanDeadBlocks();
     calcPreSuc();
-    // mergeSinglePreBlocks();
     genDom();
     genPhiThenMove();
   }

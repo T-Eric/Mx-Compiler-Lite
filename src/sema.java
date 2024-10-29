@@ -43,8 +43,8 @@ public class sema {
       input = System.in;
     } else {
       // String file = "testcases/optim/dijkstra.mx";
-      String file = "testcases/codegen/sorting/quick_sort.mx";
-      // String file = "testcases/sema/misc-package/misc-1.mx";
+      // String file = "testcases/codegen/sorting/quick_sort.mx";
+      String file = "testcases/sema/misc-package/misc-11.mx";
       input = new FileInputStream(file);
     }
 

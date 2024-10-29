@@ -21,7 +21,6 @@ public class irOptimizer {
   HashMap<irId, irId> curId = new HashMap<>();
   HashMap<irId, irId> lastDef = new HashMap<>();
   HashSet<irId> allocas = new HashSet<>();
-  boolean removePhi = true;
 
   public irOptimizer(irFunc func) { this.func = func; }
 
@@ -32,7 +31,7 @@ public class irOptimizer {
     calcPreSuc();
     // mergeSinglePreBlocks();
     genDom();
-    genPhiThenMove(removePhi);
+    genPhiThenMove();
   }
 
   //#region SSA
@@ -70,7 +69,6 @@ public class irOptimizer {
   }
 
   void calcPreSuc() {
-    // 在这里进行简单的无条件跳转空块消除
     for (var b : func.blocks) {
       if (b.terminal.type == irIns.InsType.Br) {
         brIns ter = (brIns)b.terminal;
@@ -169,7 +167,7 @@ public class irOptimizer {
     }
   }
 
-  public void genPhiThenMove(boolean rem) {
+  public void genPhiThenMove() {
     // collect all allocas
 
     for (var blk : func.blocks)
@@ -196,9 +194,6 @@ public class irOptimizer {
 
     // rename and value the phis
     rename(func.blocks.get(0));
-
-    if (!rem)
-      return;
 
     // eliminate phis
     for (var block : func.blocks) {
@@ -261,8 +256,10 @@ public class irOptimizer {
         phi.rewrite(id, curId.get(id));
 
     for (var ins : block.instructions) {
-      for (var id : curId.keySet())
+      for (var id : curId.keySet()) {
+        assert curId.containsKey(id);
         ins.rewrite(id, curId.get(id));
+      }
 
       if (ins.type == irIns.InsType.Store) {
         storeIns sto = (storeIns)ins;

@@ -165,10 +165,16 @@ public class neoBuilder {
       if (i > 7)
         break;
       var arg = toAsmId(ir.args.get(i));
-      assert arg.asmType == AsmType.Register;
-      var move = new asmIns(OpType.mv);
-      move.setMv(regi(argRegs[i]), regi(arg.reg));
-      first.instructions.addFirst(move);
+      // 不能直接assert!因为有可能被spill掉了
+      if (arg.asmType == AsmType.Register) {
+        var move = new asmIns(OpType.mv);
+        move.setMv(regi(argRegs[i]), regi(arg.reg));
+        first.instructions.addFirst(move);
+      } else {
+        var store = new asmIns(OpType.sw);
+        store.setS(regi(argRegs[i]), arg);
+        first.instructions.addFirst(store);
+      }
     }
 
     // 分配sp，存储ra和其他callee save寄存器值

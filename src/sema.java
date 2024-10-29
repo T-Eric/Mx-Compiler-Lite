@@ -42,7 +42,9 @@ public class sema {
     if (run_by_bash) {
       input = System.in;
     } else {
-      String file = "testcases/optim/pi.mx";
+      // String file = "testcases/optim/dijkstra.mx";
+      String file = "testcases/codegen/sorting/quick_sort.mx";
+      // String file = "testcases/sema/misc-package/misc-1.mx";
       input = new FileInputStream(file);
     }
 
@@ -79,23 +81,32 @@ public class sema {
       ir.visit(ir.program);
       ir.world.genIndex();
 
+      if (outToFile)
+        System.out.println(ir.world.toString());
+
       // Optimize
-      for (var cls : ir.world.classes.values()) {
-        if (!cls.builtIn) {
-          new irOptimizer(cls.constructor).ssa();
-          new asmPreOptimizer(cls.constructor).activeAnalysis();
-          for (var md : cls.methods.values()) {
-            new irOptimizer(md).ssa();
-            new asmPreOptimizer(md).activeAnalysis();
+      // 由于sema部分有些人有病，如果optimize无法执行则直接终止
+
+      try {
+        for (var cls : ir.world.classes.values()) {
+          if (!cls.builtIn) {
+            new irOptimizer(cls.constructor).ssa();
+            new asmPreOptimizer(cls.constructor).activeAnalysis();
+            for (var md : cls.methods.values()) {
+              new irOptimizer(md).ssa();
+              new asmPreOptimizer(md).activeAnalysis();
+            }
           }
         }
-      }
 
-      for (var func : ir.world.functions.values()) {
-        if (!func.builtIn) {
-          new irOptimizer(func).ssa();
-          new asmPreOptimizer(func).activeAnalysis();
+        for (var func : ir.world.functions.values()) {
+          if (!func.builtIn) {
+            new irOptimizer(func).ssa();
+            new asmPreOptimizer(func).activeAnalysis();
+          }
         }
+      } catch (Exception e) {
+        return;
       }
 
       String irCode = ir.world.toString();

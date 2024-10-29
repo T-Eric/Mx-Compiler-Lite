@@ -5,6 +5,7 @@ import ast.ExprNodes.*;
 import ast.ExprNodes.ExprNode.ExprType;
 import ast.ExprNodes.ExprNode.OpType;
 import ast.StmtNodes.*;
+import ast.StmtNodes.StmtNode.StmtType;
 import ast.atomNode.AtomType;
 import ast.programPartNode.PartType;
 import java.util.ArrayList;
@@ -544,12 +545,23 @@ public class irBuilder implements ASTVisitor {
     curBlock = trueBlock;
     curFunc.blocks.add(trueBlock);
     genBr(gotoBlock, false);
+
+    if (it.trueStmt.type != StmtType.Suite)
+      scopeStack.push(new HashMap<>());
     it.trueStmt.accept(this);
+    if (it.trueStmt.type != StmtType.Suite)
+      scopeStack.pop();
+
     if (it.falseStmt != null) {
       curBlock = falseBlock;
       curFunc.blocks.add(falseBlock);
       genBr(gotoBlock, false);
+
+      if (it.falseStmt.type != StmtType.Suite)
+        scopeStack.push(new HashMap<>());
       it.falseStmt.accept(this);
+      if (it.falseStmt.type != StmtType.Suite)
+        scopeStack.pop();
     }
     // get next block
     curBlock = gotoBlock;
@@ -577,11 +589,15 @@ public class irBuilder implements ASTVisitor {
     // get todo block: add cond and goto to stack
     curFunc.blocks.add(todoBlock);
     curBlock = todoBlock;
-    genBr(condBlock,
-          false); // must first genBr so that continue and break can revise it
+    genBr(condBlock, false);
+    // must first genBr so that continue and break can revise it
     condStack.push(condBlock);
     gotoStack.push(gotoBlock);
+    if (it.bodyStmt.type != StmtType.Suite)
+      scopeStack.push(new HashMap<>());
     it.bodyStmt.accept(this);
+    if (it.bodyStmt.type != StmtType.Suite)
+      scopeStack.pop();
     condStack.pop();
     gotoStack.pop();
     // impl goto block
@@ -736,11 +752,20 @@ public class irBuilder implements ASTVisitor {
      */
     // arrayPtr.valueType, arrayPtr
     // 决定分步生成getelementptr，不知为何indices开头一定要带一个i32,0
+    // TODO
     it.nameExpr.isLvalue = true; // get its pointer
     it.nameExpr.accept(this);
     var arrayPtr = it.nameExpr.value; // %6
+
+    // boolean nameIsNotLvalue = false;
+    // if (it.nameExpr.exprType == ExprType.Paren &&
+    //     ((parenExprNode)(it.nameExpr)).expr.exprType == ExprType.New)
+    //   nameIsNotLvalue = true;
     for (var ar : it.arr) {
       //逐层往下取
+      // if (nameIsNotLvalue) {
+      //   nameIsNotLvalue = false;
+      // } else
       arrayPtr = getPtrVal(arrayPtr);
       ar.expr.accept(this);
       var index = ar.expr.value;
@@ -836,6 +861,10 @@ public class irBuilder implements ASTVisitor {
     if (arrayDim > 0) {
       if (it.arrayConst == null) {
         irId arrayPtr = null;
+        irId midResult = null;
+        // TODO
+        if (it.isLvalue)
+          midResult = genAlloca(newType);
         if (arrayDim == 1) {
           it.rightType.blocks.get(0).expr.accept(this);
           var arrSize = it.rightType.blocks.get(0).expr.value;
@@ -923,12 +952,17 @@ public class irBuilder implements ASTVisitor {
           curBlock.instructions.add(cast);
           arrayPtr = cast.result;
         }
-        it.value = arrayPtr;
+        if (it.isLvalue) {
+          genPtrAssign(arrayPtr, midResult);
+          it.value = midResult;
+        } else
+          it.value = arrayPtr;
       } else {
         it.arrayConst.isFirst = true;
         it.arrayConst.accept(this);
         it.value = it.arrayConst.value;
       }
+
     } else if (newType.type == IRType.Class) {
       irType classType = newType.getDeref();
 

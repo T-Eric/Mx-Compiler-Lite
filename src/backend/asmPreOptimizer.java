@@ -35,10 +35,10 @@ public class asmPreOptimizer {
     genInsLinearOrd();
     genIdActiveInterval();
     // 输出一下，看看实力
-    System.out.println(func.name);
-    for (var id : ids)
-      System.out.println(id + ": " + id.actLeft + " " + id.actRight);
-    System.out.println("------\n");
+    // System.out.println(func.name);
+    // for (var id : ids)
+    //   System.out.println(id + ": " + id.actLeft + " " + id.actRight);
+    // System.out.println("------\n");
   }
 
   //#region active
@@ -110,6 +110,9 @@ public class asmPreOptimizer {
         }
       }
     }
+    for (var block : func.blocks)
+      if (block.outActiveIds == null)
+        block.outActiveIds = new HashSet<>();
   }
 
   void genInsActiveVars(irBlock block) {

@@ -33,7 +33,8 @@ public class storeIns extends irIns {
       useIds = new HashSet<irId>(Collections.singleton(storeValue));
     else
       useIds = new HashSet<irId>();
-    useIds.add(storeAddr);
+    if (storeAddr.type == IdType.Local)
+      useIds.add(storeAddr);
     return useIds;
   }
 

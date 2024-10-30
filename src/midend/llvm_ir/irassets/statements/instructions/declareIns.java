@@ -35,4 +35,9 @@ public class declareIns extends irIns {
 
   @Override
   public void rewrite(irId origin, irId copy) {}
+
+  @Override
+  public HashSet<irId> useAny() {
+    return null;
+  }
 }

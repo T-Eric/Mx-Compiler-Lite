@@ -10,6 +10,7 @@ import midend.llvm_ir.irassets.statements.instructions.retIns;
 import midend.llvm_ir.irassets.statements.irBlock;
 import midend.llvm_ir.irassets.statements.irFunc;
 import midend.llvm_ir.irassets.statements.irIns;
+import midend.llvm_ir.irassets.statements.irIns.InsType;
 
 public class asmPreOptimizer {
   public irFunc func = null;
@@ -73,19 +74,21 @@ public class asmPreOptimizer {
     // 此后如果任意路径无法抵达终点块，此程序无法进行活跃分析
     // 那么直接抛出错误即可
     // 进行一次从终点开始的bfs遍历，如果最终没能覆盖所有的块则有问题
-    LinkedList<irBlock> checkList = new LinkedList<>();
-    HashSet<irBlock> vis = new HashSet<>();
-    checkList.add(func.blocks.get(0));
-    while (!checkList.isEmpty()) {
-      var curBlock = checkList.poll();
-      if (vis.contains(curBlock))
-        continue;
-      vis.add(curBlock);
-      for (var suc : curBlock.sucBlocks)
-        checkList.add(suc);
-    }
-    if (vis.size() < func.blocks.size())
-      throw new RuntimeException();
+    // LinkedList<irBlock> checkList = new LinkedList<>();
+    // HashSet<irBlock> vis = new HashSet<>();
+    // checkList.add(func.blocks.get(0));
+    // while (!checkList.isEmpty()) {
+    //   var curBlock = checkList.poll();
+    //   if (vis.contains(curBlock))
+    //     continue;
+    //   vis.add(curBlock);
+    //   for (var suc : curBlock.sucBlocks)
+    //     checkList.add(suc);
+    // }
+    // if (vis.size() < func.blocks.size())
+    //   throw new RuntimeException();
+    if (func.blocks.get(func.blocks.size() - 1).terminal.type != InsType.Ret)
+      throw new RuntimeException("Invalid IR structure!");
   }
 
   // active analysis and regAlloc

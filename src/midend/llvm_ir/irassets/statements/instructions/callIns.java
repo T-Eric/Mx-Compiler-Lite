@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.irType.IRType;
 import midend.llvm_ir.irassets.statements.irFunc;
@@ -51,7 +50,7 @@ public class callIns extends irIns {
       return useIds;
     useIds = new HashSet<irId>();
     for (var arg : args)
-      if (arg.type == IdType.Local)
+      if (arg.isLocal())
         useIds.add(arg);
     return useIds;
   }
@@ -73,5 +72,16 @@ public class callIns extends irIns {
       if (args.get(i).equals(origin))
         args.set(i, copy);
     // if(result==origin)result=copy;
+  }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<irId>();
+    for (var arg : args)
+      if (arg.isLocalGlobal())
+        useVars.add(arg);
+    return useVars;
   }
 }

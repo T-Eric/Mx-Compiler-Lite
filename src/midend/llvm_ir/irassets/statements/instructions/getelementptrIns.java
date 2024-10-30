@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.statements.irIns;
 
 public class getelementptrIns extends irIns {
@@ -35,10 +34,10 @@ public class getelementptrIns extends irIns {
     if (useIds != null)
       return useIds;
     useIds = new HashSet<irId>();
-    if (objectPtr.type == IdType.Local)
+    if (objectPtr.isLocal())
       useIds.add(objectPtr);
     for (var index : indices)
-      if (index.type == IdType.Local)
+      if (index.isLocal())
         useIds.add(index);
     return useIds;
   }
@@ -58,5 +57,18 @@ public class getelementptrIns extends irIns {
         indices.set(i, copy);
     if (objectPtr.equals(origin))
       objectPtr = copy;
+  }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<>();
+    if (objectPtr.isLocalGlobal())
+      useVars.add(objectPtr);
+    for (var index : indices)
+      if (index.isLocalGlobal())
+        useVars.add(index);
+    return useVars;
   }
 }

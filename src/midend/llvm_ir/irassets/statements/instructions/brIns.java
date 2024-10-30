@@ -53,4 +53,14 @@ public class brIns extends irIns {
     if (cond == origin)
       cond = copy;
   }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<>();
+    if (cond != null && cond.isLocalGlobal())
+      useVars.add(cond);
+    return useVars;
+  }
 }

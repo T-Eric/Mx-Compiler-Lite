@@ -13,9 +13,11 @@ public abstract class irIns extends irStatement {
   public HashSet<irId> outActiveIds = new HashSet<>();
   protected HashSet<irId> useIds = null;
   protected HashSet<irId> defIds = null;
+  protected HashSet<irId> useVars = null;
 
   public abstract HashSet<irId> useValue();
   public abstract HashSet<irId> defValue();
+  public abstract HashSet<irId> useAny();
   public abstract void rewrite(irId origin, irId copy);
   public boolean shouldRemove = false;
 

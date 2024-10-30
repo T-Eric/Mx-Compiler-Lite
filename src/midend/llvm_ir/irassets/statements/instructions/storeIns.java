@@ -3,7 +3,6 @@ package midend.llvm_ir.irassets.statements.instructions;
 import java.util.Collections;
 import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.statements.irIns;
 
@@ -29,11 +28,11 @@ public class storeIns extends irIns {
   public HashSet<irId> useValue() {
     if (useIds != null)
       return useIds;
-    if (storeValue.type == IdType.Local)
+    if (storeValue.isLocal())
       useIds = new HashSet<irId>(Collections.singleton(storeValue));
     else
       useIds = new HashSet<irId>();
-    if (storeAddr.type == IdType.Local)
+    if (storeAddr.isLocal())
       useIds.add(storeAddr);
     return useIds;
   }
@@ -52,5 +51,17 @@ public class storeIns extends irIns {
       storeAddr = copy;
     else if (storeValue.equals(origin))
       storeValue = copy;
+  }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<>();
+    if (storeValue.isLocalGlobal())
+      useVars.add(storeValue);
+    if (storeAddr.isLocalGlobal())
+      useVars.add(storeAddr);
+    return useVars;
   }
 }

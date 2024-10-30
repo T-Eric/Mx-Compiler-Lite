@@ -31,6 +31,13 @@ public class irBlock extends irStatement {
   public HashSet<irBlock> domFronts = new HashSet<>();
   public HashMap<irId, phiIns> phis = new HashMap<>();
 
+  public HashSet<irBlock> antidom = new HashSet<>();
+  public irBlock antiidom = null;
+  public HashSet<irBlock> antiidomOf = new HashSet<>();
+  public HashSet<irBlock> antidomFronts = new HashSet<>();
+  public HashSet<irBlock> cdgSucs = new HashSet<>();
+  public HashSet<irBlock> cdgPres = new HashSet<>();
+
   public irBlock() {
     label = new irId(irId.IdType.Label);
     label.labelBlock = this;

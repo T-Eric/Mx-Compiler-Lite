@@ -55,4 +55,16 @@ public class retIns extends irIns {
     if (retValue.equals(origin))
       retValue = copy;
   }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    if (result.valueType.type == IRType.Void ||
+        retValue.type == IdType.Constant)
+      useVars = new HashSet<irId>();
+    else
+      useVars = new HashSet<irId>(Collections.singleton(retValue));
+    return useVars;
+  }
 }

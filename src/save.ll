@@ -1,437 +1,197 @@
-declare i8* @malloc(i32)
-declare i8* @_new_array(i32, i32, i32*)
-declare void @_print(i8*)
-declare void @_println(i8*)
-declare void @_printInt(i32)
-declare void @_printlnInt(i32)
-declare i8* @_getString()
-declare i32 @_getInt()
-declare i8* @_toString(i32)
-declare i8* @_string_add(i8*, i8*)
-declare i1 @_string_eq(i8*, i8*)
-declare i1 @_string_ne(i8*, i8*)
-declare i1 @_string_le(i8*, i8*)
-declare i1 @_string_leq(i8*, i8*)
-declare i1 @_string_ge(i8*, i8*)
-declare i1 @_string_geq(i8*, i8*)
-declare i8* @_string_substring(i8*, i32, i32)
-declare i32 @_string_parseInt(i8*)
-declare i32 @_string_ord(i8*, i32)
-declare i8* @_boolToString(i1)
-
-@global.n = global i32 0
-@global.a = global i32* null
-@.strconst.0 = private unnamed_addr constant [2 x i8] c" \00"
-@.strconst.1 = private unnamed_addr constant [2 x i8] c"\0A\00"
-
-
-
-
-define void @_init() {
--1  ret void
-}
-
-define void @global.exchange(i32 %0, i32 %1) {
--1  %3 = alloca i32
--1  store i32 %0, i32* %3
--1  %4 = alloca i32
--1  store i32 %1, i32* %4
--1  %5 = alloca i32
--1  store i32 0, i32* %5
--1  %6 = load i32*, i32** @global.a
--1  %7 = load i32, i32* %3
--1  %8 = getelementptr i32, i32* %6, i32 %7
--1  %9 = load i32, i32* %8
--1  store i32 %9, i32* %5
--1  %10 = load i32*, i32** @global.a
--1  %11 = load i32, i32* %3
--1  %12 = getelementptr i32, i32* %10, i32 %11
--1  %13 = load i32*, i32** @global.a
--1  %14 = load i32, i32* %4
--1  %15 = getelementptr i32, i32* %13, i32 %14
--1  %16 = load i32, i32* %15
--1  store i32 %16, i32* %12
--1  %17 = load i32*, i32** @global.a
--1  %18 = load i32, i32* %4
--1  %19 = getelementptr i32, i32* %17, i32 %18
--1  %20 = load i32, i32* %5
--1  store i32 %20, i32* %19
--1  br label %21
-
-21:
--1  ret void
-}
-
-define i32 @global.makeHeap() {
--1  %1 = alloca i32
--1  store i32 0, i32* %1
--1  %2 = alloca i32
--1  store i32 0, i32* %2
--1  %3 = alloca i32
--1  store i32 0, i32* %3
--1  %4 = alloca i32
--1  store i32 0, i32* %4
--1  %5 = load i32, i32* @global.n
--1  %6 = sub i32 %5, 1
--1  %7 = sdiv i32 %6, 2
--1  store i32 %7, i32* %2
--1  store i32 0, i32* %3
--1  store i32 0, i32* %4
--1  br label %8
-
-8:
--1  %9 = load i32, i32* %2
--1  %10 = icmp sge i32 %9, 0
--1  br i1 %10, label %11, label %55
-
-11:
--1  %12 = load i32, i32* %2
--1  %13 = mul i32 %12, 2
--1  store i32 %13, i32* %4
--1  %14 = alloca i1
--1  %15 = load i32, i32* %2
--1  %16 = mul i32 %15, 2
--1  %17 = add i32 %16, 1
--1  %18 = load i32, i32* @global.n
--1  %19 = icmp slt i32 %17, %18
--1  store i1 0, i1* %14
--1  br i1 %19, label %20, label %33
-
-20:
--1  %21 = load i32*, i32** @global.a
--1  %22 = load i32, i32* %2
--1  %23 = mul i32 %22, 2
--1  %24 = add i32 %23, 1
--1  %25 = getelementptr i32, i32* %21, i32 %24
--1  %26 = load i32, i32* %25
--1  %27 = load i32*, i32** @global.a
--1  %28 = load i32, i32* %2
--1  %29 = mul i32 %28, 2
--1  %30 = getelementptr i32, i32* %27, i32 %29
--1  %31 = load i32, i32* %30
--1  %32 = icmp slt i32 %26, %31
--1  store i1 %32, i1* %14
--1  br label %33
-
-33:
--1  %34 = load i1, i1* %14
--1  br i1 %34, label %35, label %39
-
-35:
--1  %36 = load i32, i32* %2
--1  %37 = mul i32 %36, 2
--1  %38 = add i32 %37, 1
--1  store i32 %38, i32* %4
--1  br label %39
-
-39:
--1  %40 = load i32*, i32** @global.a
--1  %41 = load i32, i32* %2
--1  %42 = getelementptr i32, i32* %40, i32 %41
--1  %43 = load i32, i32* %42
--1  %44 = load i32*, i32** @global.a
--1  %45 = load i32, i32* %4
--1  %46 = getelementptr i32, i32* %44, i32 %45
--1  %47 = load i32, i32* %46
--1  %48 = icmp sgt i32 %43, %47
--1  br i1 %48, label %49, label %52
-
-49:
--1  %50 = load i32, i32* %2
--1  %51 = load i32, i32* %4
--1  call void @global.exchange(i32 %50, i32 %51)
--1  br label %52
-
-52:
--1  %53 = load i32, i32* %2
--1  %54 = sub i32 %53, 1
--1  store i32 %54, i32* %2
--1  br label %8
-
-55:
--1  store i32 0, i32* %1
--1  br label %56
-
-56:
--1  %57 = load i32, i32* %1
--1  ret i32 %57
-}
-
-define i32 @global.adjustHeap(i32 %0) {
--1  %2 = alloca i32
--1  store i32 %0, i32* %2
--1  %3 = alloca i32
--1  store i32 0, i32* %3
--1  %4 = alloca i32
--1  store i32 0, i32* %4
--1  store i32 0, i32* %4
--1  %5 = alloca i32
--1  store i32 0, i32* %5
--1  store i32 0, i32* %5
--1  %6 = alloca i32
--1  store i32 0, i32* %6
--1  store i32 0, i32* %6
--1  br label %7
-
-7:
--1  %8 = load i32, i32* %4
--1  %9 = mul i32 %8, 2
--1  %10 = load i32, i32* %2
--1  %11 = icmp slt i32 %9, %10
--1  br i1 %11, label %12, label %70
-
-12:
--1  %13 = load i32, i32* %4
--1  %14 = mul i32 %13, 2
--1  store i32 %14, i32* %5
--1  %15 = alloca i1
--1  %16 = load i32, i32* %4
--1  %17 = mul i32 %16, 2
--1  %18 = add i32 %17, 1
--1  %19 = load i32, i32* %2
--1  %20 = icmp slt i32 %18, %19
--1  store i1 0, i1* %15
--1  br i1 %20, label %21, label %34
-
-21:
--1  %22 = load i32*, i32** @global.a
--1  %23 = load i32, i32* %4
--1  %24 = mul i32 %23, 2
--1  %25 = add i32 %24, 1
--1  %26 = getelementptr i32, i32* %22, i32 %25
--1  %27 = load i32, i32* %26
--1  %28 = load i32*, i32** @global.a
--1  %29 = load i32, i32* %4
--1  %30 = mul i32 %29, 2
--1  %31 = getelementptr i32, i32* %28, i32 %30
--1  %32 = load i32, i32* %31
--1  %33 = icmp slt i32 %27, %32
--1  store i1 %33, i1* %15
--1  br label %34
-
-34:
--1  %35 = load i1, i1* %15
--1  br i1 %35, label %36, label %40
-
-36:
--1  %37 = load i32, i32* %4
--1  %38 = mul i32 %37, 2
--1  %39 = add i32 %38, 1
--1  store i32 %39, i32* %5
--1  br label %40
-
-40:
--1  %41 = load i32*, i32** @global.a
--1  %42 = load i32, i32* %4
--1  %43 = getelementptr i32, i32* %41, i32 %42
--1  %44 = load i32, i32* %43
--1  %45 = load i32*, i32** @global.a
--1  %46 = load i32, i32* %5
--1  %47 = getelementptr i32, i32* %45, i32 %46
--1  %48 = load i32, i32* %47
--1  %49 = icmp sgt i32 %44, %48
--1  br i1 %49, label %50, label %68
-
-50:
--1  %51 = alloca i32
--1  store i32 0, i32* %51
--1  %52 = load i32*, i32** @global.a
--1  %53 = load i32, i32* %4
--1  %54 = getelementptr i32, i32* %52, i32 %53
--1  %55 = load i32, i32* %54
--1  store i32 %55, i32* %51
--1  %56 = load i32*, i32** @global.a
--1  %57 = load i32, i32* %4
--1  %58 = getelementptr i32, i32* %56, i32 %57
--1  %59 = load i32*, i32** @global.a
--1  %60 = load i32, i32* %5
--1  %61 = getelementptr i32, i32* %59, i32 %60
--1  %62 = load i32, i32* %61
--1  store i32 %62, i32* %58
--1  %63 = load i32*, i32** @global.a
--1  %64 = load i32, i32* %5
--1  %65 = getelementptr i32, i32* %63, i32 %64
--1  %66 = load i32, i32* %51
--1  store i32 %66, i32* %65
--1  %67 = load i32, i32* %5
--1  store i32 %67, i32* %4
--1  br label %69
-
-68:
--1  br label %70
-
-69:
--1  br label %7
-
-70:
--1  store i32 0, i32* %3
--1  br label %71
-
-71:
--1  %72 = load i32, i32* %3
--1  ret i32 %72
-}
-
-define i32 @global.heapSort() {
--1  %1 = alloca i32
--1  store i32 0, i32* %1
--1  %2 = alloca i32
--1  store i32 0, i32* %2
--1  %3 = alloca i32
--1  store i32 0, i32* %3
--1  store i32 0, i32* %2
--1  store i32 0, i32* %3
--1  br label %4
+define i32 @main() {
+0  call void @_init()
+1  %8.tmp.0.0 <- 0
+2  %2.tmp.0.0 <- 0
+3  %3.tmp.0.0 <- 0
+4  br label %4
 
 4:
--1  %5 = load i32, i32* %3
--1  %6 = load i32, i32* @global.n
--1  %7 = icmp slt i32 %5, %6
--1  br i1 %7, label %8, label %36
+5  %3.phi.0 <- %3.tmp.0.0
+6  %2.phi.0 <- %2.tmp.0.0
+7  %8.phi.0 <- %8.tmp.0.0
+8  %6 = icmp sle i32 %2.phi.0, 29
+9  br i1 %6, label %7, label %76
 
-8:
--1  %9 = load i32*, i32** @global.a
--1  %10 = getelementptr i32, i32* %9, i32 0
--1  %11 = load i32, i32* %10
--1  store i32 %11, i32* %2
--1  %12 = load i32*, i32** @global.a
--1  %13 = getelementptr i32, i32* %12, i32 0
--1  %14 = load i32*, i32** @global.a
--1  %15 = load i32, i32* @global.n
--1  %16 = load i32, i32* %3
--1  %17 = sub i32 %15, %16
--1  %18 = sub i32 %17, 1
--1  %19 = getelementptr i32, i32* %14, i32 %18
--1  %20 = load i32, i32* %19
--1  store i32 %20, i32* %13
--1  %21 = load i32*, i32** @global.a
--1  %22 = load i32, i32* @global.n
--1  %23 = load i32, i32* %3
--1  %24 = sub i32 %22, %23
--1  %25 = sub i32 %24, 1
--1  %26 = getelementptr i32, i32* %21, i32 %25
--1  %27 = load i32, i32* %2
--1  store i32 %27, i32* %26
--1  %28 = load i32, i32* @global.n
--1  %29 = load i32, i32* %3
--1  %30 = sub i32 %28, %29
--1  %31 = sub i32 %30, 1
--1  %32 = call i32 @global.adjustHeap(i32 %31)
--1  br label %33
-
-33:
--1  %34 = load i32, i32* %3
--1  %35 = add i32 %34, 1
--1  store i32 %35, i32* %3
--1  br label %4
-
-36:
--1  store i32 0, i32* %1
--1  br label %37
-
-37:
--1  %38 = load i32, i32* %1
--1  ret i32 %38
-}
-
-define i32 @main() {
--1  call void @_init()
--1  %1 = alloca i32
--1  store i32 0, i32* %1
--1  %2 = alloca i32
--1  store i32 0, i32* %2
--1  %3 = call i8* @_getString()
--1  %4 = call i32 @_string_parseInt(i8* %3)
--1  store i32 %4, i32* @global.n
--1  %5 = load i32, i32* @global.n
--1  %6 = mul i32 4, %5
--1  %7 = add i32 %6, 4
--1  %8 = call i8* @malloc(i32 %7)
--1  %9 = bitcast i8* %8 to i32*
--1  store i32 %5, i32* %9
--1  %10 = getelementptr i32, i32* %9, i32 1
--1  %11 = bitcast i32* %10 to i32*
--1  store i32* %11, i32** @global.a
--1  store i32 0, i32* %2
--1  br label %12
-
-12:
--1  %13 = load i32, i32* %2
--1  %14 = load i32*, i32** @global.a
--1  %15 = bitcast i32* %14 to i32*
--1  %16 = getelementptr i32, i32* %15, i32 -1
--1  %17 = load i32, i32* %16
--1  %18 = icmp slt i32 %13, %17
--1  br i1 %18, label %19, label %27
+7:
+10  %9 = load i8**, i8*** @global.str
+11  %11 = getelementptr i8*, i8** %9, i32 %2.phi.0
+12  %12 = load i32**, i32*** @global.a
+13  %14 = getelementptr i32*, i32** %12, i32 %2.phi.0
+14  %15 = load i32*, i32** %14
+15  %16 = getelementptr i32, i32* %15, i32 0
+16  %17 = load i32, i32* %16
+17  %18 = call i8* @_toString(i32 %17)
+18  store i8* %18, i8** %11
+19  %8.tmp.2.1 <- 0
+20  %3.tmp.1.1 <- 0
+21  br label %19
 
 19:
--1  %20 = load i32*, i32** @global.a
--1  %21 = load i32, i32* %2
--1  %22 = getelementptr i32, i32* %20, i32 %21
--1  %23 = load i32, i32* %2
--1  store i32 %23, i32* %22
--1  br label %24
+22  %3.phi.1 <- %3.tmp.1.1
+23  %8.phi.2 <- %8.tmp.2.1
+24  %22 = icmp slt i32 %3.phi.1, %2.phi.0
+25  br i1 %22, label %23, label %53
 
-24:
--1  %25 = load i32, i32* %2
--1  %26 = add i32 %25, 1
--1  store i32 %26, i32* %2
--1  br label %12
+23:
+26  %25 = and i32 %3.phi.1, 1
+27  %26 = icmp eq i32 %25, 0
+28  %8.tmp.1.2 <- %8.phi.2
+29  br i1 %26, label %27, label %36
 
 27:
--1  %28 = call i32 @global.makeHeap()
--1  %29 = call i32 @global.heapSort()
--1  store i32 0, i32* %2
--1  br label %30
+30  %29 = load i32**, i32*** @global.a
+31  %31 = getelementptr i32*, i32** %29, i32 %2.phi.0
+32  %32 = load i32*, i32** %31
+33  %33 = getelementptr i32, i32* %32, i32 0
+34  %34 = load i32, i32* %33
+35  %35 = add i32 %8.phi.2, %34
+36  %8.tmp.1.2 <- %35
+37  br label %36
 
-30:
--1  %31 = load i32, i32* %2
--1  %32 = load i32*, i32** @global.a
--1  %33 = bitcast i32* %32 to i32*
--1  %34 = getelementptr i32, i32* %33, i32 -1
--1  %35 = load i32, i32* %34
--1  %36 = icmp slt i32 %31, %35
--1  br i1 %36, label %37, label %48
+36:
+38  %8.phi.1 <- %8.tmp.1.2
+39  %38 = and i32 %3.phi.1, 1
+40  %39 = icmp eq i32 %38, 1
+41  %8.tmp.3.3 <- %8.phi.1
+42  br i1 %39, label %40, label %50
 
-37:
--1  %38 = load i32*, i32** @global.a
--1  %39 = load i32, i32* %2
--1  %40 = getelementptr i32, i32* %38, i32 %39
--1  %41 = load i32, i32* %40
--1  %42 = call i8* @_toString(i32 %41)
--1  %43 = getelementptr [2 x i8], [2 x i8]* @.strconst.0, i32 0, i32 0
--1  %44 = call i8* @_string_add(i8* %42, i8* %43)
--1  call void @_print(i8* %44)
--1  br label %45
-
-45:
--1  %46 = load i32, i32* %2
--1  %47 = add i32 %46, 1
--1  store i32 %47, i32* %2
--1  br label %30
-
-48:
--1  %49 = getelementptr [2 x i8], [2 x i8]* @.strconst.1, i32 0, i32 0
--1  call void @_print(i8* %49)
--1  store i32 0, i32* %1
--1  br label %50
+40:
+43  %42 = load i32**, i32*** @global.a
+44  %44 = getelementptr i32*, i32** %42, i32 %2.phi.0
+45  %45 = load i32*, i32** %44
+46  %46 = getelementptr i32, i32* %45, i32 29
+47  %47 = load i32, i32* %46
+48  %48 = add i32 %8.phi.1, %47
+49  %8.tmp.3.3 <- %48
+50  br label %50
 
 50:
--1  %51 = load i32, i32* %1
--1  ret i32 %51
+51  %8.phi.3 <- %8.tmp.3.3
+52  %52 = add i32 %3.phi.1, 1
+53  %8.tmp.2.1 <- %8.phi.3
+54  %3.tmp.1.1 <- %52
+55  br label %19
+
+53:
+56  %54 = getelementptr [5 x i8], [5 x i8]* @.strconst.0, i32 0, i32 0
+57  %55 = getelementptr [5 x i8], [5 x i8]* @.strconst.1, i32 0, i32 0
+58  %56 = call i8* @_string_add(i8* %54, i8* %55)
+59  %57 = getelementptr [5 x i8], [5 x i8]* @.strconst.2, i32 0, i32 0
+60  %58 = call i8* @_string_add(i8* %56, i8* %57)
+61  %59 = getelementptr [5 x i8], [5 x i8]* @.strconst.3, i32 0, i32 0
+62  %60 = call i8* @_string_add(i8* %58, i8* %59)
+63  %61 = getelementptr [5 x i8], [5 x i8]* @.strconst.4, i32 0, i32 0
+64  %62 = call i8* @_string_add(i8* %60, i8* %61)
+65  %63 = getelementptr [5 x i8], [5 x i8]* @.strconst.5, i32 0, i32 0
+66  %64 = call i8* @_string_add(i8* %62, i8* %63)
+67  %65 = getelementptr [5 x i8], [5 x i8]* @.strconst.6, i32 0, i32 0
+68  %66 = call i8* @_string_add(i8* %64, i8* %65)
+69  %67 = getelementptr [5 x i8], [5 x i8]* @.strconst.7, i32 0, i32 0
+70  %68 = call i8* @_string_add(i8* %66, i8* %67)
+71  %69 = getelementptr [5 x i8], [5 x i8]* @.strconst.8, i32 0, i32 0
+72  %70 = call i8* @_string_add(i8* %68, i8* %69)
+73  %71 = getelementptr [6 x i8], [6 x i8]* @.strconst.9, i32 0, i32 0
+74  %72 = call i8* @_string_add(i8* %70, i8* %71)
+75  call void @_println(i8* %72)
+76  %75 = add i32 %2.phi.0, 1
+77  %8.tmp.0.0 <- %8.phi.2
+78  %2.tmp.0.0 <- %75
+79  %3.tmp.0.0 <- %3.phi.1
+80  br label %4
+
+76:
+81  ret i32 0
 }
 
+--------
 
+define i32 @main() {
+0  call void @_init()
+1  br label %4
 
+4:
+  %8.phi.0 = phi i32 [ %8.phi.2, %73 ], [ 0, %0 ]
+  %2.phi.0 = phi i32 [ %75, %73 ], [ 0, %0 ]
+  %3.phi.0 = phi i32 [ %3.phi.1, %73 ], [ 0, %0 ]
+2  %6 = icmp sle i32 %2.phi.0, 29
+3  br i1 %6, label %7, label %76
 
+7:
+4  %9 = load i8**, i8*** @global.str
+5  %11 = getelementptr i8*, i8** %9, i32 %2.phi.0
+6  %12 = load i32**, i32*** @global.a
+7  %14 = getelementptr i32*, i32** %12, i32 %2.phi.0
+8  %15 = load i32*, i32** %14
+9  %16 = getelementptr i32, i32* %15, i32 0
+10  %17 = load i32, i32* %16
+11  %18 = call i8* @_toString(i32 %17)
+12  store i8* %18, i8** %11
+13  br label %19
 
+19:
+  %8.phi.2 = phi i32 [ %8.phi.3, %50 ], [ 0, %7 ]
+  %3.phi.1 = phi i32 [ %52, %50 ], [ 0, %7 ]
+14  %22 = icmp slt i32 %3.phi.1, %2.phi.0
+15  br i1 %22, label %23, label %53
 
+23:
+16  %25 = and i32 %3.phi.1, 1
+17  %26 = icmp eq i32 %25, 0
+18  br i1 %26, label %27, label %36
 
+27:
+19  %29 = load i32**, i32*** @global.a
+20  %31 = getelementptr i32*, i32** %29, i32 %2.phi.0
+21  %32 = load i32*, i32** %31
+22  %33 = getelementptr i32, i32* %32, i32 0
+23  %34 = load i32, i32* %33
+24  %35 = add i32 %8.phi.2, %34
+25  br label %36
 
+36:
+  %8.phi.1 = phi i32 [ %8.phi.2, %23 ], [ %35, %27 ]
+26  %38 = and i32 %3.phi.1, 1
+27  %39 = icmp eq i32 %38, 1
+28  br i1 %39, label %40, label %50
 
+40:
+29  %42 = load i32**, i32*** @global.a
+30  %44 = getelementptr i32*, i32** %42, i32 %2.phi.0
+31  %45 = load i32*, i32** %44
+32  %46 = getelementptr i32, i32* %45, i32 29
+33  %47 = load i32, i32* %46
+34  %48 = add i32 %8.phi.1, %47
+35  br label %50
 
+50:
+  %8.phi.3 = phi i32 [ %48, %40 ], [ %8.phi.1, %36 ]
+36  %52 = add i32 %3.phi.1, 1
+37  br label %19
 
+53:
+38  %54 = getelementptr [5 x i8], [5 x i8]* @.strconst.0, i32 0, i32 0
+39  %55 = getelementptr [5 x i8], [5 x i8]* @.strconst.1, i32 0, i32 0
+40  %56 = call i8* @_string_add(i8* %54, i8* %55)
+41  %57 = getelementptr [5 x i8], [5 x i8]* @.strconst.2, i32 0, i32 0
+42  %58 = call i8* @_string_add(i8* %56, i8* %57)
+43  %59 = getelementptr [5 x i8], [5 x i8]* @.strconst.3, i32 0, i32 0
+44  %60 = call i8* @_string_add(i8* %58, i8* %59)
+45  %61 = getelementptr [5 x i8], [5 x i8]* @.strconst.4, i32 0, i32 0
+46  %62 = call i8* @_string_add(i8* %60, i8* %61)
+47  %63 = getelementptr [5 x i8], [5 x i8]* @.strconst.5, i32 0, i32 0
+48  %64 = call i8* @_string_add(i8* %62, i8* %63)
+49  %65 = getelementptr [5 x i8], [5 x i8]* @.strconst.6, i32 0, i32 0
+50  %66 = call i8* @_string_add(i8* %64, i8* %65)
+51  %67 = getelementptr [5 x i8], [5 x i8]* @.strconst.7, i32 0, i32 0
+52  %68 = call i8* @_string_add(i8* %66, i8* %67)
+53  %69 = getelementptr [5 x i8], [5 x i8]* @.strconst.8, i32 0, i32 0
+54  %70 = call i8* @_string_add(i8* %68, i8* %69)
+55  %71 = getelementptr [6 x i8], [6 x i8]* @.strconst.9, i32 0, i32 0
+56  %72 = call i8* @_string_add(i8* %70, i8* %71)
+57  call void @_println(i8* %72)
+58  %75 = add i32 %2.phi.0, 1
+59  br label %4
 
-
-
-
+76:
+60  ret i32 0
+}

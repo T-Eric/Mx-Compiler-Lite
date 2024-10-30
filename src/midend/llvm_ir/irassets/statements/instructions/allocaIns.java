@@ -51,4 +51,12 @@ public class allocaIns extends irIns {
 
   @Override
   public void rewrite(irId origin, irId copy) {}
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<>();
+    return useVars;
+  }
 }

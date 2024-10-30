@@ -1,7 +1,6 @@
 package midend.llvm_ir.irassets.statements.instructions;
 
 import java.util.HashSet;
-
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.statements.irIns;
 
@@ -35,7 +34,10 @@ public class globalVarIns extends irIns {
   }
 
   @Override
-  public void rewrite(irId origin, irId copy) {
-    
+  public void rewrite(irId origin, irId copy) {}
+
+  @Override
+  public HashSet<irId> useAny() {
+    return null;
   }
 }

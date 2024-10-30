@@ -3,7 +3,6 @@ package midend.llvm_ir.irassets.statements.instructions;
 import java.util.Collections;
 import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
-import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.statements.irIns;
 
 public class moveIns extends irIns {
@@ -44,7 +43,13 @@ public class moveIns extends irIns {
 
   @Override
   public String toString() {
-    assert result.type != IdType.Global && src.type != IdType.Global;
     return String.format("%s <- %s", result, src);
+  }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars == null)
+      useVars = useIds;
+    return useVars;
   }
 }

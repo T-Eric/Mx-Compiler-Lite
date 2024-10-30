@@ -73,6 +73,10 @@ public class irId {
     return this.type == IdType.Local && this.valueType.type != IRType.Void;
   }
 
+  public boolean isLocalGlobal() {
+    return isLocal() || this.type == IdType.Global;
+  }
+
   public void setIndex() {
     if (id == -1)
       id = lastId++;

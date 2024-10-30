@@ -30,6 +30,7 @@ public class irOptimizer {
     cleanDeadBlocks();
     calcPreSuc();
     genDom();
+    genAntiDom();
     genPhiThenMove();
   }
 
@@ -166,6 +167,79 @@ public class irOptimizer {
     }
   }
 
+  void genAntiDom() {
+    for (var bk : func.blocks)
+      for (var b : func.blocks)
+        bk.antidom.add(b);
+
+    // generate dom
+    Queue<irBlock> Q = new LinkedList<>();
+    while (true) {
+      boolean changed = false;
+      Q.add(func.blocks.get(func.blocks.size() - 1));
+      HashSet<irId> visitedLabel = new HashSet<>();
+
+      while (!Q.isEmpty()) {
+        var cur = Q.poll();
+        visitedLabel.add(cur.label);
+
+        HashSet<irBlock> cap = new HashSet<>();
+        if (cur.sucBlocks.isEmpty()) {
+          cap.add(cur);
+        } else {
+          cap.addAll(cur.sucBlocks.get(0).antidom);
+          for (var suc : cur.sucBlocks)
+            cap.retainAll(suc.antidom);
+          cap.add(cur);
+        }
+        if (!cap.equals(cur.antidom)) {
+          cur.antidom.clear();
+          cur.antidom.addAll(cap);
+          changed = true;
+        }
+
+        for (var nxt : cur.preBlocks)
+          if (!visitedLabel.contains(nxt.label))
+            Q.add(nxt);
+      }
+      if (!changed)
+        break;
+    }
+
+    // pick idom from dom
+    for (var blk : func.blocks) {
+      int sz = blk.antidom.size();
+      for (var dm : blk.antidom) {
+        if (dm.antidom.size() == sz - 1) {
+          blk.antiidom = dm;
+          break;
+        }
+      }
+      if (blk.antiidom != null)
+        blk.antiidom.antiidomOf.add(blk);
+    }
+
+    // add domFronts
+    for (var blk : func.blocks) {
+      HashSet<irBlock> ans = new HashSet<>();
+      for (var suc : blk.sucBlocks) {
+        HashSet<irBlock> lhs = new HashSet<>(suc.antidom);
+        HashSet<irBlock> rhs = new HashSet<>(blk.antidom);
+        rhs.remove(blk);
+        lhs.removeAll(rhs);
+        ans.addAll(lhs);
+      }
+      for (var dff : ans)
+        dff.antidomFronts.add(blk);
+    }
+
+    for (var block : func.blocks)
+      for (var af : block.antidomFronts) {
+        af.cdgSucs.add(block);
+        block.cdgPres.add(af);
+      }
+  }
+
   public void genPhiThenMove() {
     // collect all allocas
 
@@ -193,6 +267,7 @@ public class irOptimizer {
 
     // rename and value the phis
     rename(func.blocks.get(0));
+    new adcer(func).adce();
 
     // eliminate phis
     for (var block : func.blocks) {
@@ -226,7 +301,7 @@ public class irOptimizer {
     // 如果已经有预留，不必再进行下去
     if (block.phis.containsKey(id))
       return;
-    var ins = new phiIns();
+    var ins = new phiIns(block);
     ins.result = id.copyPhi();
 
     for (var pre : block.preBlocks)

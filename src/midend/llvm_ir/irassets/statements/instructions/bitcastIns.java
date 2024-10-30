@@ -21,7 +21,6 @@ public class bitcastIns extends irIns {
 
   @Override
   public String toString() {
-    // TODO 如果两个转换类型完全相同，不应该使用bitcast了
     return String.format("%s = bitcast %s %s to %s", result, castPtr.valueType,
                          castPtr, result.valueType);
   }
@@ -48,5 +47,13 @@ public class bitcastIns extends irIns {
       castPtr = copy;
     // else if (result .equals(origin))
     //   result = copy;
+  }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<>(Collections.singleton(castPtr));
+    return useVars;
   }
 }

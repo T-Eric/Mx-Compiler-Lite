@@ -96,4 +96,16 @@ public class binaryIns extends irIns {
     // else if (result .equals(origin))
     //   result = copy;
   }
+
+  @Override
+  public HashSet<irId> useAny() {
+    if (useVars != null)
+      return useVars;
+    useVars = new HashSet<>();
+    if (lhs.isLocalGlobal())
+      useVars.add(lhs);
+    if (rhs.isLocalGlobal())
+      useVars.add(rhs);
+    return useVars;
+  }
 }

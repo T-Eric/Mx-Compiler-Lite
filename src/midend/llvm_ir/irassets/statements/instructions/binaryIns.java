@@ -3,6 +3,7 @@ package midend.llvm_ir.irassets.statements.instructions;
 import java.util.Collections;
 import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
+import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType;
 import midend.llvm_ir.irassets.statements.irIns;
 
@@ -107,5 +108,48 @@ public class binaryIns extends irIns {
     if (rhs.isLocalGlobal())
       useVars.add(rhs);
     return useVars;
+  }
+
+  public irId calc() {
+    assert lhs.type == IdType.Constant && rhs.type == IdType.Constant;
+    int l = lhs.constValue, r = rhs.constValue;
+    var tp = lhs.valueType;
+    switch (op) {
+    case Add: {
+      return new irId(tp, l + r);
+    }
+    case Sub: {
+      return new irId(tp, l - r);
+    }
+    case Mul: {
+      return new irId(tp, l * r);
+    }
+    case Sdiv: {
+      if (r == 0)
+        return new irId(tp, 0);
+      return new irId(tp, l / r);
+    }
+    case Srem: {
+      if (r == 0)
+        return new irId(tp, 0);
+      return new irId(tp, l % r);
+    }
+    case Shl: {
+      return new irId(tp, l << r);
+    }
+    case Ashr: {
+      return new irId(tp, l >> r);
+    }
+    case And: {
+      return new irId(tp, l & r);
+    }
+    case Or: {
+      return new irId(tp, l | r);
+    }
+    case Xor: {
+      return new irId(tp, l ^ r);
+    }
+    }
+    return null;
   }
 }

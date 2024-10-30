@@ -10,6 +10,8 @@ public class irWorld extends irStatement {
   public LinkedHashMap<String, irClass> classes = new LinkedHashMap<>();
   public LinkedHashMap<String, irFunc> functions = new LinkedHashMap<>();
 
+  public LinkedHashMap<String, irFunc> optees = new LinkedHashMap<>();
+
   @Override
   public void genIndex() {
     classes.values().forEach(cl -> cl.genIndex());
@@ -29,7 +31,7 @@ public class irWorld extends irStatement {
     }
     if (!functions.isEmpty()) {
       functions.values().forEach(fn -> ret.append(fn).append("\n"));
-      ret.deleteCharAt(ret.length()-1);
+      ret.deleteCharAt(ret.length() - 1);
     }
     return ret.toString();
   }

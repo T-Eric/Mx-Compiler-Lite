@@ -1,5 +1,6 @@
 package midend.llvm_ir.irassets.statements;
 
+import backend.irOptimizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ public class irFunc extends irStatement {
   // regAlloc
   public HashSet<irId> ids = new HashSet<>();
   public HashMap<irId, allocaIns> remainAllocas = new HashMap<>();
+  public irOptimizer opter = null;
 
   @Override
   public void genIndex() {

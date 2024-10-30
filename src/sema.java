@@ -1,6 +1,8 @@
 import ast.programNode;
+import backend.adcer;
 import backend.asmPreOptimizer;
 import backend.irOptimizer;
+import backend.sccp;
 import frontend.ASTBuilder;
 import frontend.ForwardCollector;
 import frontend.SemanticChecker;
@@ -11,9 +13,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.LinkedList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import midend.llvm_ir.irBuilder;
+import midend.llvm_ir.irassets.statements.irFunc;
 import midend.neo.neoBuilder;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.*;
@@ -43,9 +47,8 @@ public class sema {
       input = System.in;
     } else {
       // String file = "testcases/optim/dijkstra.mx";
-      // String file = "testcases/codegen/sorting/merge_sort.mx";
+      String file = "testcases/optim-new/const-adv.mx";
       // String file = "testcases/optim-new/efficiency.mx";
-      String file = "testcases/codegen/t2.mx";
       input = new FileInputStream(file);
     }
 
@@ -89,23 +92,34 @@ public class sema {
       // 由于sema部分有些人有病，如果optimize无法执行则直接终止
 
       try {
+        LinkedList<irFunc> funcs = new LinkedList<>();
         for (var cls : ir.world.classes.values()) {
           if (!cls.builtIn) {
-            new irOptimizer(cls.constructor).ssa();
-            new asmPreOptimizer(cls.constructor).activeAnalysis();
-            for (var md : cls.methods.values()) {
-              new irOptimizer(md).ssa();
-              new asmPreOptimizer(md).activeAnalysis();
-            }
+            funcs.add(cls.constructor);
+            for (var md : cls.methods.values())
+              funcs.add(md);
           }
         }
 
-        for (var func : ir.world.functions.values()) {
-          if (!func.builtIn) {
-            new irOptimizer(func).ssa();
-            new asmPreOptimizer(func).activeAnalysis();
-          }
+        for (var func : ir.world.functions.values())
+          if (!func.builtIn)
+            funcs.add(func);
+
+        for (var fn : funcs)
+          ir.world.optees.put(fn.name, fn);
+
+        for (var fn : funcs) {
+          fn.opter = new irOptimizer(fn);
+          fn.opter.ssa();
+          new sccp(fn).conspro();
+          new adcer(fn).adce();
         }
+
+        for (var fn : funcs) {
+          fn.opter.phiEliminate();
+          new asmPreOptimizer(fn).activeAnalysis();
+        }
+
       } catch (Exception e) {
         return;
       }

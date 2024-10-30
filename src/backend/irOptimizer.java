@@ -31,7 +31,7 @@ public class irOptimizer {
     calcPreSuc();
     genDom();
     genAntiDom();
-    genPhiThenMove();
+    genPhi();
   }
 
   //#region SSA
@@ -240,7 +240,7 @@ public class irOptimizer {
       }
   }
 
-  public void genPhiThenMove() {
+  public void genPhi() {
     // collect all allocas
 
     for (var blk : func.blocks)
@@ -267,8 +267,9 @@ public class irOptimizer {
 
     // rename and value the phis
     rename(func.blocks.get(0));
-    new adcer(func).adce();
+  }
 
+  public void phiEliminate() {
     // eliminate phis
     for (var block : func.blocks) {
       for (var phi : block.phis.values()) {

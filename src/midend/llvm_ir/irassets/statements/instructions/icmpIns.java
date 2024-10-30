@@ -5,6 +5,7 @@ import java.util.HashSet;
 import midend.llvm_ir.irassets.irId;
 import midend.llvm_ir.irassets.irId.IdType;
 import midend.llvm_ir.irassets.irType;
+import midend.llvm_ir.irassets.irType.IRType;
 import midend.llvm_ir.irassets.statements.irIns;
 
 public class icmpIns extends irIns {
@@ -104,5 +105,39 @@ public class icmpIns extends irIns {
     if (rhs.isLocalGlobal())
       useVars.add(rhs);
     return useVars;
+  }
+
+  public irId calc() {
+    irType tp = new irType(IRType.I1);
+    int l = lhs.constValue, r = rhs.constValue;
+    if (lhs.valueType.type == IRType.I1 && rhs.valueType.type == IRType.I1) {
+      switch (op) {
+      case Eq:
+        return new irId(tp, l == r ? 1 : 0);
+      case Ne:
+        return new irId(tp, l == r ? 0 : 1);
+      default:
+        return null;
+      }
+    } else if (lhs.valueType.type == IRType.I32 &&
+               rhs.valueType.type == IRType.I32) {
+      switch (op) {
+      case Eq:
+        return new irId(tp, l == r ? 1 : 0);
+      case Ne:
+        return new irId(tp, l != r ? 1 : 0);
+      case Sgt:
+        return new irId(tp, l > r ? 1 : 0);
+      case Sge:
+        return new irId(tp, l >= r ? 1 : 0);
+      case Slt:
+        return new irId(tp, l < r ? 1 : 0);
+      case Sle:
+        return new irId(tp, l <= r ? 1 : 0);
+      default:
+        return null;
+      }
+    }
+    return null;
   }
 }
